@@ -1,0 +1,51 @@
+{
+  "name": "parashift-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "lint": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@fullcalendar/core": "^6.1.17",
+    "@fullcalendar/interaction": "^6.1.17",
+    "@fullcalendar/resource-timegrid": "^6.1.17",
+    "@fullcalendar/vue3": "^6.1.17",
+    "@primevue/themes": "^4.5.4",
+    "@rollup/rollup-linux-arm64-gnu": "^4.60.1",
+    "@vueuse/core": "^14.2.1",
+    "axios": "^1.13.6",
+    "pinia": "^3.0.4",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.5.4",
+    "vee-validate": "^4.15.1",
+    "vue": "^3.5.30",
+    "vue-i18n": "^10.0.8",
+    "vue-router": "^4.5.1",
+    "yup": "^1.7.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.1",
+    "@types/node": "^24.12.0",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vue/test-utils": "^2.4.6",
+    "@vue/tsconfig": "^0.9.0",
+    "autoprefixer": "^10.4.21",
+    "jsdom": "^26.1.0",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.1",
+    "vitest": "^3.2.4",
+    "vue-tsc": "^3.2.5"
+  }
+}
