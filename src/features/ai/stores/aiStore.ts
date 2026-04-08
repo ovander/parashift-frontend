@@ -29,7 +29,7 @@ export const useAIStore = defineStore('ai', () => {
       shift_count:    sched.shifts.length,
       assigned_count: sched.assignments.length,
       employee_count: employees.employees.length,
-      coverage_gaps:  coverage.coverage?.gaps ?? 0,
+      coverage_gaps:  coverage.coverage?.gap_count ?? 0,
     }
   }
 

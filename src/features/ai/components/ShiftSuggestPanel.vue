@@ -41,7 +41,7 @@
         <span class="font-medium text-sm">{{ s.employee?.name }}</span>
         <Button size="small" :label="t('schedule.assign')" @click="apply(s)" :loading="applying === s.employee_id" />
       </div>
-      <ConfidenceBar :confidence="s.confidence" />
+      <ConfidenceBar :confidence="s.confidence ?? 0.5" />
       <p class="text-xs text-gray-500">{{ s.reason }}</p>
     </div>
   </div>
