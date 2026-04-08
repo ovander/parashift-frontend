@@ -1,8 +1,19 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
+import { execSync } from 'child_process'
+
+function gitCommit(): string {
+  try { return execSync('git rev-parse --short HEAD').toString().trim() }
+  catch { return 'unknown' }
+}
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__:    JSON.stringify(process.env.npm_package_version ?? 'dev'),
+    __APP_COMMIT__:     JSON.stringify(process.env.VITE_COMMIT ?? gitCommit()),
+    __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [vue()],
   server: {
     port: 5181,
@@ -14,9 +25,10 @@ export default defineConfig({
     },
   },
   build: {
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks(id) {
+        manualChunks(id: string) {
           if (id.includes('/vue-router/') || id.includes('/node_modules/vue/') || id.includes('/pinia/'))
             return 'vendor-vue'
           if (id.includes('/primevue/') || id.includes('/@primevue/'))
@@ -27,19 +39,6 @@ export default defineConfig({
             return 'vendor-utils'
         },
       },
-    },
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-    // Exclude e2e/ — those are Playwright tests, not Vitest
-    include: ['src/**/*.spec.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'lcov'],
-      include: ['src/stores/**', 'src/composables/**', 'src/features/**/stores/**', 'src/features/**/composables/**'],
-      thresholds: { statements: 80 },
     },
   },
 })
