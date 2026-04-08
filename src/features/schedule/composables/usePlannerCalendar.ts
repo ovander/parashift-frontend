@@ -1,5 +1,5 @@
 import { computed, ref, type Ref } from 'vue'
-import type { CalendarOptions, EventInput, EventDropArg, EventMountArg, DatesSetArg } from '@fullcalendar/core'
+import type { CalendarOptions, EventInput, EventDropArg, EventMountArg, DatesSetArg, ResourceLabelMountArg } from '@fullcalendar/core'
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid'
 import interactionPlugin, { type EventReceiveArg } from '@fullcalendar/interaction'
 import type { Employee, ShiftInstance, Assignment, StoreException, LeaveRequest } from '@/types'
@@ -35,11 +35,51 @@ export function usePlannerCalendar(opts: UsePlannerCalendarOptions) {
   // Persist the active view (day / week) across remounts caused by navigation.
   const activeView = ref<string>('resourceTimeGridDay')
 
+  // Track the visible date range so leave badges stay accurate when navigating.
+  const currentViewStart = ref(opts.weekStart.value)
+  const currentViewEnd   = ref(opts.weekStart.value)
+
+  // Name of the public holiday on the current visible start date (null if none).
+  // In day view this is the single displayed day; in week view it's Monday.
+  const currentHolidayName = computed((): string | null => {
+    if (!opts.holidays?.value) return null
+    return opts.holidays.value.find((h) => h.date === currentViewStart.value)?.name ?? null
+  })
+
+  // Set of employee IDs that have approved leave overlapping the current visible range.
+  // Works for both day view (single day) and week view (7-day span).
+  const onLeaveSet = computed((): Set<string> => {
+    const viewStart = currentViewStart.value
+    const viewEnd   = currentViewEnd.value   // exclusive (FC end is day-after-last)
+    const result    = new Set<string>()
+    for (const leave of (opts.leaves?.value ?? [])) {
+      if (leave.status !== 'approved') continue
+      // Overlap: leave starts before view ends AND leave ends on or after view starts
+      if (leave.start_date < viewEnd && leave.end_date >= viewStart) {
+        result.add(leave.employee_id)
+      }
+    }
+    return result
+  })
+
+  // Set of employee IDs with at least one assignment on the current view date.
+  const employeesWithShifts = computed((): Set<string> => {
+    const result = new Set<string>()
+    for (const a of opts.assignments.value) {
+      if (a.shift_date === currentViewStart.value) result.add(a.employee_id)
+    }
+    return result
+  })
+
   const resources = computed(() =>
     opts.employees.value.map((e) => ({
       id:    e.id,
       title: e.name,
-      extendedProps: { role: e.job_role },
+      extendedProps: {
+        role:     e.job_role,
+        onLeave:  onLeaveSet.value.has(e.id),
+        noShifts: !employeesWithShifts.value.has(e.id),
+      },
     })),
   )
 
@@ -229,6 +269,46 @@ export function usePlannerCalendar(opts: UsePlannerCalendarOptions) {
 
   }
 
+  /**
+   * Inject a 🌴 badge into the resource (employee) column header when the
+   * employee has approved leave overlapping the current visible date range.
+   * This makes vacation immediately visible to the manager at a glance,
+   * even if no shifts are assigned — the column is never hidden.
+   */
+  function handleResourceLabelDidMount(info: ResourceLabelMountArg) {
+    // Guard: don't double-inject if FullCalendar calls this twice for the same cell.
+    if (info.el.querySelector('.ps-badge')) return
+
+    const cushion = info.el.querySelector('.fc-col-header-cell-cushion') ?? info.el
+
+    function makeBadge(emoji: string, title: string, className: string) {
+      const b = document.createElement('span')
+      b.className   = `ps-badge ${className}`
+      b.textContent = ` ${emoji}`
+      b.title       = title
+      Object.assign(b.style, { fontSize: '13px', verticalAlign: 'middle', opacity: '0.9' })
+      cushion.appendChild(b)
+    }
+
+    // 1. Approved leave takes highest priority.
+    if (info.resource.extendedProps.onLeave) {
+      makeBadge('🌴', 'Congé approuvé', 'ps-leave-badge')
+      return
+    }
+
+    // 2. Public holiday — shown on every employee column for the day.
+    if (currentHolidayName.value) {
+      makeBadge('🗓', currentHolidayName.value, 'ps-holiday-badge')
+      return
+    }
+
+    // 3. No shifts assigned to this employee on the current day (day view only).
+    // Shown as a neutral "·" so the manager knows the empty column is not a bug.
+    if (activeView.value === 'resourceTimeGridDay' && info.resource.extendedProps.noShifts) {
+      makeBadge('·', 'Pas de service planifié', 'ps-off-badge')
+    }
+  }
+
   function handleDrop(info: EventDropArg) {
     const employeeId = info.event.getResources()[0]?.id
     const shiftId    = info.event.extendedProps.shiftId
@@ -272,6 +352,10 @@ export function usePlannerCalendar(opts: UsePlannerCalendarOptions) {
     // Persist the current view so it survives remounts.
     activeView.value = info.view.type
 
+    // Keep the visible range in sync so leave badges are accurate.
+    currentViewStart.value = info.start.toISOString().slice(0, 10)
+    currentViewEnd.value   = info.end.toISOString().slice(0, 10) // exclusive
+
     if (opts.onWeekChange) {
       const monday = toISOMonday(info.start)
       if (monday !== opts.weekStart.value) {
@@ -291,10 +375,14 @@ export function usePlannerCalendar(opts: UsePlannerCalendarOptions) {
     editable:         true,
     droppable:        true,
     titleFormat,
-    eventDrop:        handleDrop,
-    eventReceive:     handleReceive,
-    eventDidMount:    handleEventDidMount,
-    datesSet:         handleDatesSet,
+    eventDrop:              handleDrop,
+    eventReceive:           handleReceive,
+    eventDidMount:          handleEventDidMount,
+    resourceLabelDidMount:  handleResourceLabelDidMount,
+    datesSet:               handleDatesSet,
+    // Always show all employees — a column must never vanish just because
+    // no shifts are assigned (e.g. employee on vacation).
+    filterResourcesWithEvents: false,
     slotMinTime:      '07:00:00',
     slotMaxTime:      '22:00:00',
     slotDuration:     '00:30:00',   // 30-min slots — denser but still readable
@@ -309,11 +397,13 @@ export function usePlannerCalendar(opts: UsePlannerCalendarOptions) {
     // so the planner never pushes the page itself.
     height:           '100%',
     expandRows:       true,
+    // Keep the resource (employee names) column narrow so shift columns get more space.
+    resourceAreaWidth: '80px',
     // Compact event rendering
     eventMinHeight:   24,
     lazyFetching:     true,
     nowIndicator:     true,
   }))
 
-  return { calendarOptions, resources, events }
+  return { calendarOptions, resources, events, currentHolidayName }
 }

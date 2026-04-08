@@ -1,25 +1,26 @@
 <template>
   <div class="flex items-center gap-2 px-4 py-2 bg-white border-b border-gray-200 min-w-0">
     <!-- Week navigation -->
-    <Button icon="pi pi-chevron-left" text rounded size="small" :aria-label="t('common.back')" @click="ctx.prevWeek()" />
-    <span class="text-sm font-semibold text-gray-800 w-52 shrink-0 text-center truncate">{{ weekLabel }}</span>
-    <Button icon="pi pi-chevron-right" text rounded size="small" @click="ctx.nextWeek()" />
+    <Button icon="pi pi-chevron-left" text rounded :aria-label="t('common.back')" @click="ctx.prevWeek()" class="flex-shrink-0 w-9 h-9" />
+    <span class="text-sm font-semibold text-gray-800 min-w-0 shrink truncate text-center">{{ weekLabel }}</span>
+    <Button icon="pi pi-chevron-right" text rounded @click="ctx.nextWeek()" class="flex-shrink-0 w-9 h-9" />
 
     <div class="flex-1" />
 
     <Divider layout="vertical" class="h-5" />
 
-    <!-- AI panel toggle — labelled: primary action -->
+    <!-- AI panel toggle — icon+label on lg+, icon-only with tooltip on smaller screens -->
     <Button
       icon="pi pi-sparkles"
-      :label="t('ai.suggest')"
+      :label="aiLabel"
       size="small"
       outlined
+      v-tooltip.bottom="!aiLabel ? t('ai.suggest') : undefined"
       @click="emit('openAI')"
     />
 
     <!-- Save indicator -->
-    <KSaveBanner :dirty="scheduleStore.dirty" />
+    <KSaveBanner :dirty="scheduleStore.dirty as any" />
 
     <Divider layout="vertical" class="h-5" />
 
@@ -145,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Divider from 'primevue/divider'
@@ -156,7 +157,6 @@ import { useStoreContext } from '@/stores/storeContext'
 import { useScheduleStore } from '../stores/scheduleStore'
 import { useEmployeeStore } from '@/features/employees/stores/employeeStore'
 import { useCoverageStore } from '@/features/coverage/stores/coverageStore'
-import { useUiStore } from '@/stores/ui'
 import KSaveBanner from '@/components/KSaveBanner.vue'
 
 const { t } = useI18n()
@@ -165,10 +165,16 @@ const scheduleStore = useScheduleStore()
 const employeeStore = useEmployeeStore()
 const coverageStore = useCoverageStore()
 const confirm       = useConfirm()
-const ui            = useUiStore()
 
 // ── Dev flag ───────────────────────────────────────────────────────────
 const isDev = import.meta.env.DEV
+
+// ── AI button label: text on lg+, undefined (icon-only) on smaller screens ─
+const isLargeScreen = ref(window.innerWidth >= 1024)
+function updateScreenSize() { isLargeScreen.value = window.innerWidth >= 1024 }
+onMounted(()  => window.addEventListener('resize', updateScreenSize))
+onUnmounted(() => window.removeEventListener('resize', updateScreenSize))
+const aiLabel = computed(() => isLargeScreen.value ? t('ai.suggest') : undefined)
 
 // ── Reset week ─────────────────────────────────────────────────────────
 function confirmReset() {

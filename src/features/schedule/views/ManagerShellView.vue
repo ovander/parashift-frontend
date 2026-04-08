@@ -232,7 +232,6 @@ import { useStoreContext } from '@/stores/storeContext'
 import { usePlanStore } from '@/stores/planStore'
 import { useScheduleStore } from '../stores/scheduleStore'
 import { useEmployeeStore } from '@/features/employees/stores/employeeStore'
-import { useCoverageStore } from '@/features/coverage/stores/coverageStore'
 import { usePlannerCalendar } from '../composables/usePlannerCalendar'
 import { usePlannerLayers } from '../composables/usePlannerLayers'
 import { usePublicHolidays } from '../composables/usePublicHolidays'
@@ -256,7 +255,6 @@ const ctx = useStoreContext()
 const planStore = usePlanStore()
 const scheduleStore = useScheduleStore()
 const employeeStore = useEmployeeStore()
-const coverageStore = useCoverageStore()
 const { layers } = usePlannerLayers()
 
 const mode = ref<ManagerMode>('operate')

@@ -2,7 +2,7 @@
   <div class="p-6 space-y-6">
     <div class="flex items-center justify-between">
       <h1 class="text-xl font-semibold text-gray-900">{{ t('nav.templates') }}</h1>
-      <KSaveBanner :dirty="templateStore.dirty" />
+      <KSaveBanner :dirty="templateStore.dirty as any" />
     </div>
 
     <!-- A/B side by side -->
@@ -73,7 +73,7 @@
       </div>
       <template #footer>
         <Button label="Cancel" outlined @click="addSlotOpen = false" />
-        <Button label="Add" :loading="templateStore.dirty.isSaving.value" @click="addSlot" />
+        <Button label="Add" :loading="templateStore.dirty.isSaving as any" @click="addSlot" />
       </template>
     </Dialog>
 

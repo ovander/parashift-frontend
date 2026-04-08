@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import Drawer from 'primevue/drawer'
 import Button from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
@@ -79,7 +79,6 @@ const toast = useToast()
 
 const loading = ref(false)
 const selectedIdx = ref(0)
-const history = ref<any[]>([])
 
 const snapshots = computed<PlanSnapshot[]>(() => planStore.plan?.snapshots ?? [])
 const overrides = computed<PlanOverride[]>(() => planStore.plan?.override_log ?? [])

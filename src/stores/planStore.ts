@@ -71,7 +71,7 @@ export const usePlanStore = defineStore('plan', () => {
       return
     }
     const planId = plan.value.id
-    log.info('recordOverride →', { storeId, planId, shiftId: payload.shift_id })
+    log.info('recordOverride →', { storeId, planId, shiftIds: payload.shift_ids })
     try {
       const res = await api.post<{ status: string }>(
         `/api/v1/stores/${storeId}/plans/${planId}/override`,

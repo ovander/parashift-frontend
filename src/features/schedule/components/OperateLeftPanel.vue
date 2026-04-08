@@ -60,11 +60,9 @@ import InputText from 'primevue/inputtext'
 import { useEmployeeStore } from '@/features/employees/stores/employeeStore'
 import { useScheduleStore } from '@/features/schedule/stores/scheduleStore'
 import { useQualificationStore } from '@/features/qualifications/stores/qualificationStore'
-import { useStoreContext } from '@/stores/storeContext'
 
 const emit = defineEmits<{ 'drag-employee': [employeeId: string] }>()
 
-const ctx = useStoreContext()
 const employeeStore = useEmployeeStore()
 const scheduleStore = useScheduleStore()
 const qualStore = useQualificationStore()

@@ -2,13 +2,23 @@
   <div class="flex flex-col h-full bg-gray-50">
     <PlannerToolbar @open-a-i="aiPanelOpen = true" />
 
+    <!-- Public holiday banner -->
+    <div
+      v-if="currentHolidayName"
+      class="flex items-center gap-2 px-4 py-1.5 bg-amber-50 border-b border-amber-200 text-sm text-amber-800"
+    >
+      <i class="pi pi-calendar text-amber-500 text-base flex-shrink-0" />
+      <span class="font-medium">Jour férié —</span>
+      <span>{{ currentHolidayName }}</span>
+    </div>
+
     <!-- Coverage alert -->
     <CoverageAlertBanner v-if="coverageStore.hasGaps()" :store-id="ctx.storeId" />
 
     <!-- Main content -->
     <div class="flex flex-1 min-h-0">
-      <!-- Calendar -->
-      <div class="flex-1 overflow-hidden p-2">
+      <!-- Calendar — overflow-auto lets FC's internal horizontal scroll work on iPad -->
+      <div class="flex-1 min-w-0 overflow-auto p-2">
         <div v-if="scheduleStore.loading" class="space-y-3 p-2">
           <Skeleton height="60px" v-for="i in 6" :key="i" />
         </div>
@@ -37,7 +47,6 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
 import FullCalendar from '@fullcalendar/vue3'
 import Drawer from 'primevue/drawer'
 import Skeleton from 'primevue/skeleton'
@@ -51,21 +60,18 @@ import { useCoverageStore } from '@/features/coverage/stores/coverageStore'
 import { useLeaveStore } from '@/features/leave/stores/leaveStore'
 import { usePlannerCalendar } from '../composables/usePlannerCalendar'
 import { usePublicHolidays } from '../composables/usePublicHolidays'
-import { useRuleViolations } from '../composables/useRuleViolations'
 
 import PlannerToolbar       from '../components/PlannerToolbar.vue'
 import ShiftEventContent    from '../components/ShiftEventContent.vue'
 import CoverageAlertBanner  from '@/features/coverage/components/CoverageAlertBanner.vue'
 import AIPanel              from '@/features/ai/components/AIPanel.vue'
 
-const { t }      = useI18n()
 const toast      = useToast()
 const ctx        = useStoreContext()
 const scheduleStore  = useScheduleStore()
 const employeeStore  = useEmployeeStore()
 const coverageStore  = useCoverageStore()
 const leaveStore     = useLeaveStore()
-const rv             = useRuleViolations()
 
 const aiPanelOpen = ref(false)
 
@@ -90,7 +96,7 @@ async function handleAssign(shiftId: string, employeeId: string, revert: () => v
   }
 }
 
-const { calendarOptions } = usePlannerCalendar({
+const { calendarOptions, currentHolidayName } = usePlannerCalendar({
   storeId:      computed(() => ctx.storeId),
   weekStart:    computed(() => ctx.weekStart),
   employees:    computed(() => employeeStore.employees ?? []),
@@ -119,6 +125,20 @@ watch(() => ctx.weekStart, loadWeek)
 </script>
 
 <style>
+/*
+ * Minimum width per resource (employee) column in resourceTimeGridDay/Week.
+ * FullCalendar distributes available width across columns — with many employees
+ * on iPad the columns get too narrow. Setting min-width on the col element lets
+ * the table overflow its container, enabling the outer div's overflow-auto to
+ * kick in and produce a horizontal scrollbar.
+ * NOTE: dayMinWidth requires the premium @fullcalendar/scrollgrid; this CSS
+ * approach achieves the same result without additional packages.
+ */
+.fc .fc-col-header-cell,
+.fc .fc-timegrid-col {
+  min-width: 90px;
+}
+
 /*
  * The global style.css sets h2 { color: var(--text-h); font-size: 24px; margin: 0 0 8px }
  * and in dark OS mode --text-h becomes near-white (#f3f4f6), making the title invisible

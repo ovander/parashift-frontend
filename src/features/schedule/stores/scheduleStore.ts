@@ -127,6 +127,7 @@ export const useScheduleStore = defineStore('schedule', () => {
       store_id:         storeId,
       shift_id:         shiftId,
       employee_id:      employeeId,
+      status:           'pending',
       shift_date:       sourceShift?.date       ?? '',
       shift_start_time: sourceShift?.start_time ?? '',
       shift_end_time:   sourceShift?.end_time   ?? '',

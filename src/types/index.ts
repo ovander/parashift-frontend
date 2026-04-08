@@ -39,7 +39,7 @@ export type ShiftSource = 'MANUAL' | 'TEMPLATE' | 'OVERRIDE'
  */
 export type ViolationSeverity = 'BLOCKING' | 'WARNING' | 'INFO'
 
-export type CoverageStatus = 'OK' | 'UNDERSTAFFED' | 'OVERSTAFFED'
+export type CoverageStatus = 'OK' | 'UNDERSTAFFED' | 'OVERSTAFFED' | 'MISSING_ROLE'
 // LeaveType values match the backend constants in model/leave_request.go.
 // Previously the frontend used 'ANNUAL'/'UNPAID' which never matched the backend.
 export type LeaveType      = 'vacation' | 'sick' | 'other'
@@ -60,6 +60,7 @@ export interface Employee {
   email:                   string
   contract_hours_per_week: number
   start_date:              ISODate           // first day on the job — used for A/B week-type calculation
+  is_active?:              boolean           // whether the employee is currently active
   created_at:              ISODateTime
   updated_at:              ISODateTime
 }
@@ -87,6 +88,8 @@ export interface ShiftInstance {
   source:         ShiftSource
   /** Populated when source = 'TEMPLATE'. */
   template_id?:   string
+  /** The specific role required for this shift (often same as role). */
+  required_role?: string
   /** True when an assignment for this shift was cancelled due to approved leave. */
   needs_cover:    boolean
   created_at:     ISODateTime
@@ -184,6 +187,42 @@ export interface ScheduleSuggestion {
   employee_id:   string
   employee_name: string
   reason:        string
+  confidence?:   number       // 0-1, confidence level of this suggestion
+  employee?:     Employee     // Optional full employee object for enhanced display
+}
+
+/** Type of AI insight (for categorization and styling). */
+export type AIInsightType = 'COVERAGE' | 'REST' | 'FAIRNESS' | 'COST'
+
+/**
+ * AI insight: a high-level observation about the schedule
+ * (e.g. coverage gaps, unfair distribution, cost anomalies).
+ */
+export interface AIInsight {
+  id:              string
+  type:            AIInsightType
+  message:         string
+  recommendation:  string
+  confidence:      number       // 0-1, how confident the AI is in this insight
+}
+
+/**
+ * AI optimization suggestion for improving a schedule.
+ */
+export interface OptimizeSuggestion {
+  id:              string
+  type:            string       // e.g. 'shift_swap', 'add_staff', 'reduce_shifts'
+  description:     string
+  impact:          number       // Estimated impact score
+}
+
+/**
+ * A suggestion from AI for the schedule optimization panel.
+ */
+export interface AISuggestion {
+  id:              string
+  type:            string       // e.g. 'coverage_gap', 'overstaffed', 'fairness'
+  description:     string
 }
 
 export interface LeaveRequest {
@@ -365,6 +404,7 @@ export interface SchedulePlan {
   state:       PlanState
   snapshots:   PlanSnapshot[]
   override_log: PlanOverride[]
+  version?:    number        // Optional version field for tracking plan versions
   created_at:  ISODateTime
   updated_at:  ISODateTime
 }
