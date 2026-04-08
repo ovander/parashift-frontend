@@ -1,5 +1,6 @@
 import { computed, ref, type Ref } from 'vue'
-import type { CalendarOptions, EventInput, EventDropArg, EventMountArg, DatesSetArg, ResourceLabelMountArg } from '@fullcalendar/core'
+import type { CalendarOptions, EventInput, EventDropArg, EventMountArg, DatesSetArg } from '@fullcalendar/core'
+import type { ResourceLabelMountArg } from '@fullcalendar/resource'
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid'
 import interactionPlugin, { type EventReceiveArg } from '@fullcalendar/interaction'
 import type { Employee, ShiftInstance, Assignment, StoreException, LeaveRequest } from '@/types'
