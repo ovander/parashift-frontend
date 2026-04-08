@@ -1,5 +1,5 @@
 import { ref, reactive, readonly } from 'vue'
-import axios from 'axios'
+import api from '@/composables/useApi'
 
 export interface BackendVersion {
   version:    string
@@ -16,7 +16,7 @@ async function fetchBackend() {
   if (_backend.value || _loading.value) return
   _loading.value = true
   try {
-    const { data } = await axios.get<BackendVersion>('/api/version')
+    const { data } = await api.get<BackendVersion>('/api/version')
     _backend.value = data
   } catch (e: any) {
     _error.value = e?.message ?? 'unknown error'
