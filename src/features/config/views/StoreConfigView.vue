@@ -404,9 +404,9 @@ const hoursDirty = ref(false)
 function buildHourRows() {
   const map = Object.fromEntries(store.openingHours.map(s => [s.day_of_week, s]))
   hourRows.value = dayOptions.value.map(d => {
-    const slot = map[d.value]
+    const slot = map[Number(d.value)]
     return {
-      day:        d.value,
+      day:        Number(d.value),
       label:      d.label,
       open:       !!slot,
       open_time:  slot?.open_time  ?? '09:00',

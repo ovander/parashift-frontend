@@ -192,7 +192,7 @@ function confirmDelete(store: Store) {
     message: `Delete store "${store.name}"? This action cannot be undone.`,
     header: 'Delete store',
     icon: 'pi pi-exclamation-triangle',
-    acceptSeverity: 'danger',
+    acceptClass: 'p-button-danger',
     accept: () => deleteStore(store),
   })
 }

@@ -236,7 +236,7 @@ async function loadStores() {
   storesLoading.value = true
   try {
     const { data } = await api.get<{ data: Store[] }>('/api/v1/admin/stores?per_page=200')
-    storeOptions.value = (data.data ?? []).map((s) => ({ label: s.name, value: s.id }))
+    storeOptions.value = (data.data ?? []).map((s: { name: string; id: string }) => ({ label: s.name, value: s.id }))
   } finally {
     storesLoading.value = false
   }
