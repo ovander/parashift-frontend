@@ -55,7 +55,7 @@
         <Button
           type="submit"
           :label="t('common.save')"
-          :loading="rulesStore.dirty.isSaving.value"
+          :loading="rulesStore.dirty.isSaving as any"
           class="flex-1"
         />
         <Button
@@ -66,7 +66,7 @@
         />
       </div>
 
-      <KSaveBanner :dirty="rulesStore.dirty" />
+      <KSaveBanner :dirty="rulesStore.dirty as any" />
     </form>
   </Drawer>
 </template>
