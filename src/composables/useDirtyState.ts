@@ -1,13 +1,13 @@
-import { ref, readonly } from 'vue'
+import { ref, type Ref } from 'vue'
 
 export type DirtyState = 'clean' | 'dirty' | 'error' | 'saving'
 
 export interface DirtyStateHandle {
-  readonly state: Readonly<ReturnType<typeof ref<DirtyState>>>
-  readonly isDirty: Readonly<ReturnType<typeof ref<boolean>>>
-  readonly hasError: Readonly<ReturnType<typeof ref<boolean>>>
-  readonly isSaving: Readonly<ReturnType<typeof ref<boolean>>>
-  readonly errorMessage: Readonly<ReturnType<typeof ref<string>>>
+  state: Ref<DirtyState>
+  isDirty: Ref<boolean>
+  hasError: Ref<boolean>
+  isSaving: Ref<boolean>
+  errorMessage: Ref<string>
   markDirty(): void
   markSaving(): void
   markClean(): void
@@ -15,8 +15,8 @@ export interface DirtyStateHandle {
   reset(): void
 }
 
-const stateRegistry = new Map<string, ReturnType<typeof ref<DirtyState>>>()
-const errorRegistry = new Map<string, ReturnType<typeof ref<string>>>()
+const stateRegistry = new Map<string, Ref<DirtyState>>()
+const errorRegistry = new Map<string, Ref<string>>()
 
 export function getDirtyModules(): string[] {
   const dirty: string[] = []
@@ -73,12 +73,16 @@ export function useDirtyState(moduleKey: string): DirtyStateHandle {
 
   syncDerived()
 
-  return {
-    state: readonly(state),
-    isDirty: readonly(isDirty),
-    hasError: readonly(hasError),
-    isSaving: readonly(isSaving),
-    errorMessage: readonly(errorMessage),
-    markDirty, markSaving, markClean, markError, reset,
-  }
+  const handle = Object.create(null)
+  handle.state = state
+  handle.isDirty = isDirty
+  handle.hasError = hasError
+  handle.isSaving = isSaving
+  handle.errorMessage = errorMessage
+  handle.markDirty = markDirty
+  handle.markSaving = markSaving
+  handle.markClean = markClean
+  handle.markError = markError
+  handle.reset = reset
+  return handle as DirtyStateHandle
 }

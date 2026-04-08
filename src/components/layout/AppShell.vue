@@ -1,10 +1,16 @@
 <template>
   <div class="flex h-screen bg-gray-50 overflow-hidden">
     <!-- Sidebar -->
-    <!-- Sidebar: hidden on mobile, visible as flex column on md+ -->
+    <!--
+      Managers/admins: sidebar from md+ (768px).
+      Employees: sidebar only from lg+ (1024px) — below that they use the bottom nav.
+    -->
     <nav
-      class="flex-shrink-0 bg-white border-r border-gray-200 hidden md:flex md:flex-col transition-all duration-200"
-      :class="collapsed ? 'w-14' : 'w-56'"
+      class="flex-shrink-0 bg-white border-r border-gray-200 flex-col transition-all duration-200"
+      :class="[
+        authStore.user?.position === 'employee' ? 'hidden lg:flex' : 'hidden md:flex',
+        collapsed ? 'w-14' : 'w-56',
+      ]"
     >
       <!-- Logo + collapse toggle -->
       <div class="flex items-center border-b border-gray-200" :class="collapsed ? 'justify-center p-2' : 'px-4 py-3 gap-2'">
@@ -81,34 +87,201 @@
             {{ initials }}
           </button>
         </div>
+
+        <!-- Version chip -->
+        <button
+          v-if="!collapsed"
+          class="mt-2 w-full flex items-center gap-1.5 px-2 py-1 rounded hover:bg-gray-50 transition-colors group"
+          @click="aboutOpen = true"
+        >
+          <i class="pi pi-info-circle text-[11px] text-gray-300 group-hover:text-gray-400" />
+          <span class="text-[10px] text-gray-300 group-hover:text-gray-400 font-mono truncate">
+            v{{ appVersion.frontend.version }} · {{ appVersion.frontend.commit }}
+          </span>
+        </button>
+        <div v-else class="flex justify-center mt-1.5">
+          <button
+            class="text-gray-300 hover:text-gray-400 transition-colors"
+            title="About"
+            @click="aboutOpen = true"
+          >
+            <i class="pi pi-info-circle text-xs" />
+          </button>
+        </div>
       </div>
     </nav>
 
+    <!-- ── About dialog ──────────────────────────────────────────────────────── -->
+    <Dialog v-model:visible="aboutOpen" modal header="À propos" :style="{ width: '22rem' }" :draggable="false">
+      <div class="space-y-4 text-sm">
+        <!-- Frontend -->
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Frontend</div>
+          <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-gray-700">
+            <span class="text-gray-400">Version</span>
+            <span class="font-mono">{{ appVersion.frontend.version }}</span>
+            <span class="text-gray-400">Commit</span>
+            <span class="font-mono">{{ appVersion.frontend.commit }}</span>
+            <span class="text-gray-400">Build</span>
+            <span class="font-mono text-xs">{{ appVersion.frontend.buildTime }}</span>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100" />
+
+        <!-- Backend -->
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Backend</div>
+          <div v-if="appVersion.backend" class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-gray-700">
+            <span class="text-gray-400">Version</span>
+            <span class="font-mono">{{ appVersion.backend.version }}</span>
+            <span class="text-gray-400">Commit</span>
+            <span class="font-mono">{{ appVersion.backend.commit }}</span>
+            <span class="text-gray-400">Build</span>
+            <span class="font-mono text-xs">{{ appVersion.backend.build_time }}</span>
+          </div>
+          <div v-else class="text-xs text-gray-400 italic">Chargement…</div>
+        </div>
+      </div>
+    </Dialog>
+
     <!-- Main content — flex-col + h-full lets child views fill exactly the available space -->
-    <main class="flex-1 flex flex-col overflow-hidden min-w-0">
+    <!-- pb-16 lg:pb-0 (employees): leave room for the bottom nav on phone + tablet -->
+    <main
+      class="flex-1 flex flex-col overflow-hidden min-w-0"
+      :class="authStore.user?.position === 'employee' ? 'pb-16 lg:pb-0' : ''"
+    >
+      <!-- ── Mobile top bar — managers/admins only, hidden on md+ ──────────── -->
+      <header
+        v-if="authStore.user?.position !== 'employee'"
+        class="md:hidden flex-shrink-0 flex items-center gap-3 px-4 h-12 bg-white border-b border-gray-200 z-40"
+      >
+        <button
+          class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 transition-colors"
+          aria-label="Open menu"
+          @click="mobileMenuOpen = true"
+        >
+          <i class="pi pi-bars text-lg" />
+        </button>
+        <RouterLink to="/" class="flex-1 min-w-0">
+          <img src="/logo.png" alt="ParaShift" class="h-6 w-auto" />
+        </RouterLink>
+        <div
+          class="w-7 h-7 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 text-xs font-bold"
+          :title="authStore.user?.name"
+        >
+          {{ initials }}
+        </div>
+      </header>
+
       <ErrorBoundary>
         <RouterView />
       </ErrorBoundary>
     </main>
+
+    <!-- ── Mobile nav drawer — managers/admins on < md ───────────────────── -->
+    <Drawer
+      v-if="authStore.user?.position !== 'employee'"
+      v-model:visible="mobileMenuOpen"
+      position="left"
+      :style="{ width: '14rem' }"
+      :pt="{ header: { style: 'padding: 0.75rem 1rem' }, content: { style: 'padding: 0.75rem 0.5rem' } }"
+      class="md:!hidden"
+    >
+      <template #header>
+        <img src="/logo.png" alt="ParaShift" class="h-6 w-auto" />
+      </template>
+
+      <div class="space-y-0.5" @click="mobileMenuOpen = false">
+        <template v-if="authStore.user?.position === 'manager' && ctx.storeId">
+          <p class="px-3 mb-1 mt-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Schedule</p>
+          <NavItem :to="`/stores/${ctx.storeId}/planner`"       icon="pi-calendar"       :label="t('nav.planner')"  :collapsed="false" />
+          <NavItem :to="`/stores/${ctx.storeId}/coverage`"      icon="pi-chart-bar"      :label="t('nav.coverage')" :collapsed="false" />
+          <NavItem :to="`/stores/${ctx.storeId}/leave/approve`" icon="pi-calendar-minus" :label="t('nav.leave')"    :collapsed="false" />
+          <NavItem :to="`/stores/${ctx.storeId}/swaps/approve`" icon="pi-arrows-h"       :label="t('nav.swaps')"    :collapsed="false" />
+          <p class="px-3 mb-1 mt-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Configuration</p>
+          <NavItem :to="`/stores/${ctx.storeId}/team`"   icon="pi-users"    label="Team"                   :collapsed="false" />
+          <NavItem :to="`/stores/${ctx.storeId}/rules`"  icon="pi-shield"   :label="t('nav.rules')"        :collapsed="false" />
+          <NavItem :to="`/stores/${ctx.storeId}/config`" icon="pi-building" :label="t('nav.config')"       :collapsed="false" />
+        </template>
+
+        <template v-if="authStore.user?.position === 'admin'">
+          <p class="px-3 mb-1 mt-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Operations</p>
+          <NavItem to="/admin"            icon="pi-objects-column" label="Dashboard"  :collapsed="false" />
+          <NavItem to="/admin/audit-logs" icon="pi-list"           label="Audit Logs" :collapsed="false" />
+          <p class="px-3 mb-1 mt-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Organisation</p>
+          <NavItem to="/admin/stores"    icon="pi-building"  label="Stores"    :collapsed="false" />
+          <NavItem to="/admin/managers"  icon="pi-user-edit" label="Managers"  :collapsed="false" />
+          <NavItem to="/admin/employees" icon="pi-users"     label="Employees" :collapsed="false" />
+        </template>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center gap-2 px-1">
+          <div class="w-7 h-7 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 text-xs font-bold flex-shrink-0">
+            {{ initials }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-xs font-medium text-gray-800 truncate">{{ authStore.user?.name }}</div>
+            <div class="text-xs text-gray-400 capitalize">{{ authStore.user?.position }}</div>
+          </div>
+          <Button icon="pi pi-sign-out" text rounded size="small" @click="logout" v-tooltip="t('auth.logout')" />
+        </div>
+      </template>
+    </Drawer>
   </div>
+
+  <!-- ── Bottom nav — employees on phone + tablet (< lg = < 1024px) ──────── -->
+  <nav
+    v-if="authStore.user?.position === 'employee' && ctx.storeId"
+    class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 flex"
+  >
+    <RouterLink
+      :to="`/stores/${ctx.storeId}/today`"
+      class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium text-gray-400 transition-colors [&.router-link-active]:text-brand-600"
+    >
+      <i class="pi pi-home text-xl" />
+      <span>Aujourd'hui</span>
+    </RouterLink>
+    <RouterLink
+      :to="`/stores/${ctx.storeId}/my-week`"
+      class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium text-gray-400 transition-colors [&.router-link-active]:text-brand-600"
+    >
+      <i class="pi pi-calendar-clock text-xl" />
+      <span>Ma semaine</span>
+    </RouterLink>
+    <RouterLink
+      :to="`/stores/${ctx.storeId}/leave`"
+      class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium text-gray-400 transition-colors [&.router-link-active]:text-brand-600"
+    >
+      <i class="pi pi-calendar-minus text-xl" />
+      <span>Congé</span>
+    </RouterLink>
+  </nav>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, resolveComponent, watch } from 'vue'
+import { ref, computed, h, resolveComponent, watch, type VNode } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
+import Drawer from 'primevue/drawer'
 import { useAuth } from '@/composables/useAuth'
 import { useAuthStore } from '@/stores/auth'
 import { useStoreContext } from '@/stores/storeContext'
+import { useAppVersion } from '@/composables/useAppVersion'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
 
-const { t }     = useI18n()
-const auth      = useAuth()
-const authStore = useAuthStore()
-const ctx       = useStoreContext()
-const route     = useRoute()
-const router    = useRouter()
+const { t }      = useI18n()
+const auth       = useAuth()
+const authStore  = useAuthStore()
+const ctx        = useStoreContext()
+const route      = useRoute()
+const router     = useRouter()
+const appVersion    = useAppVersion()
+const aboutOpen     = ref(false)
+const mobileMenuOpen = ref(false)
 
 // ── Sidebar collapse state (persisted in localStorage) ─────────────────
 const collapsed = ref(localStorage.getItem('nav:collapsed') === 'true')
@@ -135,7 +308,7 @@ async function logout() {
 // NavItem — supports collapsed (icon-only) mode with a tooltip fallback.
 const NavItem = {
   props: ['to', 'icon', 'label', 'collapsed'],
-  setup(props) {
+  setup(props: { to: string; icon: string; label: string; collapsed?: boolean }) {
     return () => {
       if (props.collapsed) {
         // Icon-only: render a centered icon with title tooltip
@@ -166,11 +339,11 @@ const NavItem = {
 // NavSection renders a labeled group header (hidden in collapsed mode).
 const NavSection = {
   props: ['label'],
-  setup(props, { slots }) {
+  setup(props: { label: string }, { slots }: { slots: Record<string, (() => VNode | VNode[] | null) | undefined> }) {
     return () =>
       h('div', { class: 'mb-3' }, [
         h('p', { class: 'px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400' }, props.label),
-        h('div', { class: 'space-y-0.5' }, slots.default?.()),
+        h('div', { class: 'space-y-0.5' }, slots.default?.() || undefined),
       ])
   },
 }

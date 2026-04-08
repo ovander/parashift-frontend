@@ -1,28 +1,31 @@
 <template>
   <div>
     <!-- ── Day card row ─────────────────────────────────────────────────── -->
-    <div class="overflow-x-auto">
-      <div class="flex gap-2 pb-2" ref="stripRef">
+    <!--
+      Mobile  (< md): 2-column grid — all 7 cards visible at once, Sunday spans full width.
+      Desktop (md+):  horizontal flex strip with overflow-x-auto (original behaviour).
+    -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
         <!-- Loading skeleton cards -->
         <template v-if="schedStore.loading">
           <Skeleton
             v-for="i in 7"
             :key="i"
-            width="160px"
             height="90px"
             border-radius="12px"
-            class="flex-shrink-0"
+            :class="[i === 7 ? 'col-span-2 sm:col-span-3 md:col-span-1 lg:col-span-1' : '']"
           />
         </template>
 
         <!-- Real day cards -->
         <template v-else>
           <div
-            v-for="day in days"
+            v-for="(day, i) in days"
             :key="day.iso"
             :data-day="day.iso"
             :class="[
-              'flex-shrink-0 w-40 rounded-xl border-2 p-3 cursor-pointer transition-all',
+              'rounded-xl border-2 p-3 cursor-pointer transition-all',
+              i === 6 ? 'col-span-2 sm:col-span-3 md:col-span-1 lg:col-span-1' : '',
               day.iso === selectedDay
                 ? 'border-brand-500 bg-brand-50'
                 : 'border-gray-200 bg-white hover:border-gray-300',
@@ -65,11 +68,13 @@
                 ⚠ conflict
               </span>
             </div>
-            <div v-else-if="day.holiday" class="mt-1 text-xs text-amber-600 italic">Jour férié</div>
-            <div v-else-if="!day.leave" class="mt-2 text-xs text-gray-300 italic">Off</div>
+            <div v-else-if="day.holiday" class="mt-1 text-xs text-amber-600 font-medium">Jour férié</div>
+            <div v-else-if="!day.leave" class="mt-2 flex items-center gap-1 text-xs text-gray-400">
+              <i class="pi pi-moon text-[10px]" />
+              <span>Repos</span>
+            </div>
           </div>
         </template>
-      </div>
     </div>
 
     <!-- ── Selected day detail ─────────────────────────────────────────────── -->
@@ -123,8 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
-import { useSwipe } from '@vueuse/core'
+import { ref, computed, watch } from 'vue'
 import Skeleton from 'primevue/skeleton'
 import { useStoreContext } from '@/stores/storeContext'
 import { useScheduleStore } from '@/features/schedule/stores/scheduleStore'
@@ -139,7 +143,6 @@ const ctx        = useStoreContext()
 const schedStore = useScheduleStore()
 const leaveStore = useLeaveStore()
 const auth       = useAuthStore()
-const stripRef   = ref<HTMLElement | null>(null)
 
 const weekStartRef               = computed(() => ctx.weekStart)
 const { holidays }               = usePublicHolidays(weekStartRef)
@@ -179,26 +182,6 @@ const selectedDay = ref<string>(todayOrMonday())
 
 // Re-anchor when the user navigates to a different week
 watch(() => ctx.weekStart, () => { selectedDay.value = todayOrMonday() })
-
-// ── Sprint 3.2: scroll selected card into view after render ────────────────
-function scrollToSelected() {
-  nextTick(() => {
-    stripRef.value
-      ?.querySelector<HTMLElement>(`[data-day="${selectedDay.value}"]`)
-      ?.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' })
-  })
-}
-
-watch(selectedDay, scrollToSelected)
-watch(() => schedStore.loading, (loading) => { if (!loading) scrollToSelected() })
-
-// ── Swipe to navigate weeks ────────────────────────────────────────────────
-useSwipe(stripRef, {
-  onSwipeEnd: (_, dir) => {
-    if (dir === 'left')  ctx.nextWeek()
-    if (dir === 'right') ctx.prevWeek()
-  },
-})
 
 // ── Timezone-safe ISO date ─────────────────────────────────────────────────
 // toISOString() converts to UTC — in CEST (UTC+2) midnight local becomes

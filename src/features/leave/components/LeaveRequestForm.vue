@@ -24,11 +24,11 @@
         <label class="text-sm font-medium text-gray-700">Reason (optional)</label>
         <Textarea v-model="form.reason" rows="3" fluid />
       </div>
-      <KSaveBanner :dirty="leaveStore.dirty" />
+      <KSaveBanner :dirty="leaveStore.dirty as any" />
     </div>
     <template #footer>
       <Button :label="t('common.cancel')" outlined @click="visible = false" />
-      <Button :label="t('leave.request')" :loading="leaveStore.dirty.isSaving.value" @click="submit" />
+      <Button :label="t('leave.request')" :loading="leaveStore.dirty.isSaving as any" @click="submit" />
     </template>
   </Dialog>
 </template>
@@ -45,6 +45,7 @@ import { useLeaveStore } from '../stores/leaveStore'
 import { useStoreContext } from '@/stores/storeContext'
 import { useOptionsStore } from '@/stores/optionsStore'
 import KSaveBanner from '@/components/KSaveBanner.vue'
+import type { LeaveType } from '@/types'
 
 const visible = defineModel<boolean>('visible', { default: false })
 const { t }         = useI18n()
@@ -68,7 +69,7 @@ async function submit() {
   if (!form.start_date || !form.end_date) return
   try {
     await leaveStore.createLeave(ctx.storeId, {
-      type:       form.type,
+      type:       form.type as LeaveType,
       start_date: toISO(form.start_date),
       end_date:   toISO(form.end_date),
       reason:     form.reason || undefined,

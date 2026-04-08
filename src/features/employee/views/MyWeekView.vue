@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-md mx-auto px-4 py-6 space-y-4">
+  <div class="w-full max-w-md sm:max-w-2xl lg:max-w-5xl xl:max-w-none mx-auto px-4 py-6 space-y-4 overflow-y-auto h-full">
     <!-- Swap inbox -->
     <SwapInboxCard />
 

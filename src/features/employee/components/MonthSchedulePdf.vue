@@ -168,7 +168,7 @@ import { useStoreContext } from '@/stores/storeContext'
 import type { ShiftInstance, Assignment } from '@/types'
 import { icsDateTime, icsEscape, icsFold, duration, shiftColor, isoWeek } from '../utils/icsUtils'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const auth = useAuthStore()
 const ctx  = useStoreContext()
 const api  = useApi()
