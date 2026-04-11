@@ -1,0 +1,14 @@
+{
+  "suggest": "Suggestions IA",
+  "selectShift": "Sélectionner un créneau…",
+  "selectShiftIdle": "Sélectionnez un créneau et cliquez sur « {btn} »",
+  "optimize": "Optimiser",
+  "insights": "Insights",
+  "getSuggestions": "Obtenir des suggestions",
+  "applying": "Application...",
+  "confidence": "Confiance",
+  "reason": "Raison",
+  "applyAll": "Tout appliquer",
+  "noInsights": "Aucun insight disponible",
+  "dismiss": "Ignorer"
+}

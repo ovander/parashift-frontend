@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '@/composables/useApi'
 import { useUiStore } from '@/stores/ui'
 import { createDevlog, extractApiError } from '@/utils/logger'
@@ -29,7 +30,8 @@ export interface StoreException {
 }
 
 export const useStoreConfigStore = defineStore('storeConfig', () => {
-  const ui = useUiStore()
+  const ui    = useUiStore()
+  const { t } = useI18n()
 
   // ── Opening hours ──────────────────────────────────────────────────
   const openingHours  = ref<OpeningHourSlot[]>([])
@@ -55,10 +57,10 @@ export const useStoreConfigStore = defineStore('storeConfig', () => {
       await api.put('/api/v1/stores/me', { opening_hours: slots })
       openingHours.value = slots
       log.info('saveOpeningHours ✓', { count: slots.length })
-      ui.showToast('success', 'Saved', 'Opening hours updated')
+      ui.showToast('success', t('common.saved'), t('config.openingHours.saved'))
     } catch (err) {
       log.error('saveOpeningHours failed', extractApiError(err))
-      ui.showToast('error', 'Error', extractApiError(err))
+      ui.showToast('error', t('common.error'), extractApiError(err))
     } finally {
       savingHours.value = false
     }
@@ -88,11 +90,11 @@ export const useStoreConfigStore = defineStore('storeConfig', () => {
       const res = await api.post<CoverageRequirement>(`/api/v1/stores/${storeId}/coverage-requirements`, req)
       requirements.value.push(res.data)
       log.info('createRequirement ✓', res.data.id)
-      ui.showToast('success', 'Added', 'Coverage requirement added')
+      ui.showToast('success', t('common.added'), t('config.coverage.added'))
       return res.data
     } catch (err) {
       log.error('createRequirement failed', extractApiError(err))
-      ui.showToast('error', 'Error', extractApiError(err))
+      ui.showToast('error', t('common.error'), extractApiError(err))
     } finally {
       savingRequirement.value = false
     }
@@ -105,11 +107,11 @@ export const useStoreConfigStore = defineStore('storeConfig', () => {
       const idx = requirements.value.findIndex(r => r.id === id)
       if (idx !== -1) requirements.value[idx] = res.data
       log.info('updateRequirement ✓', id)
-      ui.showToast('success', 'Saved', 'Requirement updated')
+      ui.showToast('success', t('common.saved'), t('config.coverage.updated'))
       return res.data
     } catch (err) {
       log.error('updateRequirement failed', extractApiError(err))
-      ui.showToast('error', 'Error', extractApiError(err))
+      ui.showToast('error', t('common.error'), extractApiError(err))
     } finally {
       savingRequirement.value = false
     }
@@ -120,10 +122,10 @@ export const useStoreConfigStore = defineStore('storeConfig', () => {
       await api.delete(`/api/v1/stores/${storeId}/coverage-requirements/${id}`)
       requirements.value = requirements.value.filter(r => r.id !== id)
       log.info('deleteRequirement ✓', id)
-      ui.showToast('success', 'Deleted', 'Requirement removed')
+      ui.showToast('success', t('common.deleted'), t('config.coverage.deleted'))
     } catch (err) {
       log.error('deleteRequirement failed', extractApiError(err))
-      ui.showToast('error', 'Error', extractApiError(err))
+      ui.showToast('error', t('common.error'), extractApiError(err))
     }
   }
 
@@ -162,11 +164,11 @@ export const useStoreConfigStore = defineStore('storeConfig', () => {
         a.date.localeCompare(b.date),
       )
       log.info('createException ✓', res.data.id)
-      ui.showToast('success', 'Exception ajoutée', res.data.date)
+      ui.showToast('success', t('config.exceptions.added'), res.data.date)
       return res.data
     } catch (err) {
       log.error('createException failed', extractApiError(err))
-      ui.showToast('error', 'Erreur', extractApiError(err))
+      ui.showToast('error', t('common.error'), extractApiError(err))
     } finally {
       savingException.value = false
     }
@@ -178,11 +180,11 @@ export const useStoreConfigStore = defineStore('storeConfig', () => {
     try {
       await api.delete(`/api/v1/stores/${storeId}/exceptions/${id}`)
       log.info('deleteException ✓', id)
-      ui.showToast('success', 'Exception supprimée', '')
+      ui.showToast('success', t('config.exceptions.deleted'), '')
     } catch (err) {
       exceptions.value = prev
       log.error('deleteException failed', extractApiError(err))
-      ui.showToast('error', 'Erreur', extractApiError(err))
+      ui.showToast('error', t('common.error'), extractApiError(err))
     }
   }
 

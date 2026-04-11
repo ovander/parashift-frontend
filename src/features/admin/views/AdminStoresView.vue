@@ -1,8 +1,8 @@
 <template>
   <div class="p-6 space-y-4">
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold text-gray-900">Stores</h1>
-      <Button label="New store" icon="pi pi-plus" @click="openNew" />
+      <h1 class="text-xl font-semibold text-gray-900">{{ t('admin.stores.title') }}</h1>
+      <Button :label="t('admin.stores.newStore')" icon="pi pi-plus" @click="openNew" />
     </div>
 
     <!-- Error -->
@@ -12,7 +12,7 @@
     >
       <i class="pi pi-exclamation-triangle text-red-500" />
       {{ error }}
-      <Button label="Retry" text size="small" class="ml-auto" @click="load" />
+      <Button :label="t('common.retry')" text size="small" class="ml-auto" @click="load" />
     </div>
 
     <Card>
@@ -25,13 +25,15 @@
           paginator
           :rows-per-page-options="[10, 20, 50]"
         >
-          <Column field="name" header="Name" sortable />
-          <Column field="timezone" header="Timezone" style="width: 180px">
+          <Column field="name" :header="t('common.name')" sortable />
+          <!-- hidden on mobile -->
+          <Column v-if="!isMobile" field="timezone" :header="t('admin.stores.colTimezone')" style="width: 180px">
             <template #body="{ data }">
               <span class="text-xs text-gray-500">{{ data.timezone || '—' }}</span>
             </template>
           </Column>
-          <Column field="created_at" header="Created" style="width: 140px">
+          <!-- desktop only -->
+          <Column v-if="isDesktop" field="created_at" :header="t('admin.stores.colCreated')" style="width: 140px">
             <template #body="{ data }">
               <span class="text-xs text-gray-500">{{ formatDate(data.created_at) }}</span>
             </template>
@@ -45,42 +47,41 @@
             </template>
           </Column>
           <template #empty>
-            <span class="text-sm text-gray-400">No stores yet.</span>
+            <span class="text-sm text-gray-400">{{ t('admin.stores.empty') }}</span>
           </template>
         </DataTable>
       </template>
     </Card>
 
     <!-- Create / Edit dialog -->
-    <Dialog
+    <ResponsiveDialog
       v-model:visible="dialogVisible"
-      :header="editingStore ? 'Edit store' : 'New store'"
-      :style="{ width: '420px' }"
-      modal
+      :header="editingStore ? t('admin.stores.editTitle') : t('admin.stores.newStore')"
+      size="sm"
     >
       <div class="space-y-4 pt-2">
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Store name <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium text-gray-700">{{ t('admin.stores.storeName') }} <span class="text-red-500">*</span></label>
           <InputText v-model="form.name" placeholder="e.g. Brussels Central" autofocus />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Timezone</label>
+          <label class="text-sm font-medium text-gray-700">{{ t('admin.stores.colTimezone') }}</label>
           <Select
             v-model="form.timezone"
             :options="timezones"
             option-label="label"
             option-value="value"
-            placeholder="Select a timezone"
+            :placeholder="t('admin.stores.selectTimezone')"
             filter
             fluid
           />
         </div>
       </div>
       <template #footer>
-        <Button label="Cancel" text @click="dialogVisible = false" />
-        <Button :label="editingStore ? 'Save' : 'Create'" :loading="saving" @click="save" />
+        <Button :label="t('common.cancel')" text @click="dialogVisible = false" />
+        <Button :label="editingStore ? t('common.save') : t('common.create')" :loading="saving" @click="save" />
       </template>
-    </Dialog>
+    </ResponsiveDialog>
 
     <!-- Delete confirm -->
     <ConfirmDialog />
@@ -89,17 +90,21 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConfirm } from 'primevue/useconfirm'
 import Button        from 'primevue/button'
 import Card          from 'primevue/card'
 import DataTable     from 'primevue/datatable'
 import Column        from 'primevue/column'
-import Dialog        from 'primevue/dialog'
+import ResponsiveDialog from '@/components/common/ResponsiveDialog.vue'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 import InputText     from 'primevue/inputtext'
 import Select        from 'primevue/select'
 import ConfirmDialog from 'primevue/confirmdialog'
 import api from '@/composables/useApi'
 import { useUiStore } from '@/stores/ui'
+
+const { isMobile, isDesktop } = useBreakpoint()
 
 interface Store {
   id:         string
@@ -108,6 +113,7 @@ interface Store {
   created_at: string
 }
 
+const { t, locale } = useI18n()
 const ui      = useUiStore()
 const confirm = useConfirm()
 
@@ -141,7 +147,7 @@ async function load() {
     const { data } = await api.get<{ data: Store[] }>('/api/v1/admin/stores?per_page=200')
     stores.value = data.data ?? []
   } catch {
-    error.value = 'Failed to load stores.'
+    error.value = t('admin.stores.loadFailed')
   } finally {
     loading.value = false
   }
@@ -170,18 +176,18 @@ async function save() {
         name:     form.value.name,
         timezone: form.value.timezone,
       })
-      ui.showToast('success', 'Store updated')
+      ui.showToast('success', t('admin.stores.updated'))
     } else {
       await api.post('/api/v1/admin/stores', {
         name:     form.value.name,
         timezone: form.value.timezone,
       })
-      ui.showToast('success', 'Store created')
+      ui.showToast('success', t('admin.stores.created'))
     }
     dialogVisible.value = false
     await load()
   } catch {
-    ui.showToast('error', 'Failed to save store')
+    ui.showToast('error', t('admin.stores.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -189,8 +195,8 @@ async function save() {
 
 function confirmDelete(store: Store) {
   confirm.require({
-    message: `Delete store "${store.name}"? This action cannot be undone.`,
-    header: 'Delete store',
+    message: t('admin.stores.deleteMessage', { name: store.name }),
+    header:  t('admin.stores.deleteHeader'),
     icon: 'pi pi-exclamation-triangle',
     acceptClass: 'p-button-danger',
     accept: () => deleteStore(store),
@@ -200,15 +206,16 @@ function confirmDelete(store: Store) {
 async function deleteStore(store: Store) {
   try {
     await api.delete(`/api/v1/admin/stores/${store.id}`)
-    ui.showToast('success', 'Store deleted')
+    ui.showToast('success', t('admin.stores.deleted'))
     await load()
   } catch {
-    ui.showToast('error', 'Failed to delete store')
+    ui.showToast('error', t('admin.stores.deleteFailed'))
   }
 }
 
 function formatDate(iso: string) {
   if (!iso) return '—'
-  return new Intl.DateTimeFormat('fr-BE', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(iso))
+  const dl = locale.value === 'fr' ? 'fr-FR' : 'en-GB'
+  return new Intl.DateTimeFormat(dl, { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(iso))
 }
 </script>

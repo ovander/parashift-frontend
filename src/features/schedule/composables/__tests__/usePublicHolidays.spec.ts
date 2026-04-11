@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ref, nextTick } from 'vue'
+import { ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 
 // ── Hoist mocks BEFORE imports ────────────────────────────────────────────────
@@ -11,7 +11,7 @@ vi.mock('@/composables/useApi', () => ({
 }))
 
 // ── Import AFTER mocks are registered ────────────────────────────────────────
-import { usePublicHolidays } from '@/features/schedule/composables/usePublicHolidays'
+import { usePublicHolidays, clearHolidayCache } from '@/features/schedule/composables/usePublicHolidays'
 
 const HOLIDAYS_2026 = [
   { date: '2026-01-01', name: "Jour de l'An",      zone: 'metropole' },
@@ -22,6 +22,8 @@ const HOLIDAYS_2026 = [
 describe('usePublicHolidays', () => {
   beforeEach(() => {
     mockGet.mockReset()
+    // Clear the module-level cache so each test starts with a clean slate.
+    clearHolidayCache()
   })
 
   it('fetches holidays for the given year on mount', async () => {
@@ -30,8 +32,7 @@ describe('usePublicHolidays', () => {
     const weekStart = ref('2026-04-06')
     const { holidays } = usePublicHolidays(weekStart)
 
-    await nextTick()
-    await nextTick() // allow the async load to settle
+    await flushPromises()
 
     expect(mockGet).toHaveBeenCalledWith('/api/v1/public-holidays', { params: { year: 2026 } })
     expect(holidays.value).toHaveLength(3)
@@ -44,13 +45,11 @@ describe('usePublicHolidays', () => {
     const weekStart = ref('2026-04-06')
     const { holidays } = usePublicHolidays(weekStart)
 
-    await nextTick()
-    await nextTick()
+    await flushPromises()
 
     // Navigate to a different week in the same year.
     weekStart.value = '2026-06-01'
-    await nextTick()
-    await nextTick()
+    await flushPromises()
 
     expect(mockGet).toHaveBeenCalledTimes(1) // cached — no second call
     expect(holidays.value).toHaveLength(3)
@@ -68,8 +67,6 @@ describe('usePublicHolidays', () => {
     const weekStart = ref('2026-12-28')
     const { holidays } = usePublicHolidays(weekStart)
 
-    // Two concurrent fetchYear() calls → Promise.all needs one extra microtask
-    // flush beyond what two nextTick() calls guarantee; flushPromises drains all.
     await flushPromises()
 
     expect(mockGet).toHaveBeenCalledWith('/api/v1/public-holidays', { params: { year: 2026 } })
@@ -83,8 +80,7 @@ describe('usePublicHolidays', () => {
     const weekStart = ref('2026-04-06')
     const { holidays } = usePublicHolidays(weekStart)
 
-    await nextTick()
-    await nextTick()
+    await flushPromises()
 
     // No throw — holidays gracefully degrades to empty.
     expect(holidays.value).toEqual([])
@@ -98,13 +94,11 @@ describe('usePublicHolidays', () => {
     const weekStart = ref('2026-04-06')
     const { holidays } = usePublicHolidays(weekStart)
 
-    await nextTick()
-    await nextTick()
+    await flushPromises()
     expect(holidays.value).toHaveLength(3)
 
     weekStart.value = '2027-03-01'
-    await nextTick()
-    await nextTick()
+    await flushPromises()
 
     expect(mockGet).toHaveBeenCalledTimes(2)
     expect(holidays.value).toHaveLength(1)

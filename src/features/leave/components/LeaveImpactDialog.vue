@@ -1,9 +1,9 @@
 <template>
-  <Dialog
+  <ResponsiveDialog
     v-model:visible="visible"
+    size="md"
     modal
     :closable="!confirming"
-    :style="{ width: '520px' }"
     :pt="{ header: { class: 'pb-2' } }"
   >
     <template #header>
@@ -35,8 +35,8 @@
         <div class="min-w-0">
           <p class="font-semibold text-gray-900 text-sm">{{ employeeName }}</p>
           <p class="text-xs text-gray-500 capitalize mt-0.5">
-            {{ leave.type }} &nbsp;·&nbsp; {{ leave.start_date }} – {{ leave.end_date }}
-            ({{ dayCount }} day{{ dayCount !== 1 ? 's' : '' }})
+            {{ t(`leave.type.${leave.type}`, leave.type) }} &nbsp;·&nbsp; {{ leave.start_date }} – {{ leave.end_date }}
+            ({{ t('leave.dayCount', dayCount, { count: dayCount }) }})
           </p>
           <p v-if="leave.reason" class="text-xs text-gray-400 italic mt-0.5 truncate">
             "{{ leave.reason }}"
@@ -145,15 +145,18 @@
         />
       </div>
     </template>
-  </Dialog>
+  </ResponsiveDialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import Dialog   from 'primevue/dialog'
+import { useI18n } from 'vue-i18n'
+import ResponsiveDialog from '@/components/common/ResponsiveDialog.vue'
 import Button   from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
 import type { LeaveRequest, LeaveImpact } from '@/types'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   visible:      boolean

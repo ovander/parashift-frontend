@@ -1,14 +1,14 @@
 <template>
-  <Drawer
+  <AppDrawer
     v-model:visible="visible"
     position="right"
-    :style="{ width: '760px' }"
+    size="xl"
     @hide="emit('close')"
   >
     <template #header>
       <div class="flex items-center gap-2">
         <i class="pi pi-calendar text-brand-500" />
-        <span class="font-semibold text-gray-900">A/B Planning — {{ props.employeeName }}</span>
+        <span class="font-semibold text-gray-900">{{ t('manager.weekTemplate.title') }} — {{ props.employeeName }}</span>
       </div>
     </template>
 
@@ -22,20 +22,16 @@
       <!-- Info banner -->
       <div class="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
         <i class="pi pi-info-circle mt-0.5 flex-shrink-0" />
-        <span>
-          Weeks alternate <strong>A → B → A → B</strong> from the store anchor date.
-          Click <strong>+</strong> to add a shift to a day. You can add multiple shifts per day
-          (e.g. split shifts). Leave a day empty for a day off.
-        </span>
+        <span v-html="t('manager.weekTemplate.infoBanner')" />
       </div>
 
       <!-- ── Week A ─────────────────────────────────────────────────────────── -->
       <div class="rounded-xl border border-blue-200 overflow-hidden">
         <div class="flex items-center gap-3 px-4 py-2.5 bg-blue-50">
           <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-blue-200 text-blue-800">A</span>
-          <span class="text-sm font-semibold text-blue-800">Week A</span>
-          <span class="text-xs text-gray-400 ml-1">{{ shiftsFor('A').length }} shift{{ shiftsFor('A').length !== 1 ? 's' : '' }}</span>
-          <span v-if="totalHours('A') > 0" class="ml-auto text-xs font-medium text-blue-600">{{ totalHours('A') }}h / week</span>
+          <span class="text-sm font-semibold text-blue-800">{{ t('manager.weekTemplate.weekA') }}</span>
+          <span class="text-xs text-gray-400 ml-1">{{ t('manager.weekTemplate.shiftCount', shiftsFor('A').length, { n: shiftsFor('A').length }) }}</span>
+          <span v-if="totalHours('A') > 0" class="ml-auto text-xs font-medium text-blue-600">{{ t('manager.weekTemplate.hoursPerWeek', { n: totalHours('A') }) }}</span>
         </div>
         <div class="bg-white">
           <div class="grid grid-cols-7 divide-x divide-gray-100 border-b border-gray-100">
@@ -54,19 +50,19 @@
                   class="w-full text-xs border border-gray-200 rounded px-1 py-0.5 font-mono text-center focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-400" />
                 <select v-model="row.role"
                   class="w-full text-[10px] border border-gray-200 rounded px-1 py-0.5 text-gray-600 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-400 truncate">
-                  <option value="">Any role</option>
+                  <option value="">{{ t('manager.weekTemplate.anyRole') }}</option>
                   <option v-for="r in optionsStore.jobRoles" :key="r.value" :value="r.value">{{ r.label }}</option>
                 </select>
                 <div class="flex items-center justify-between pb-1">
                   <span class="text-[10px] text-gray-400 leading-none">{{ durationLabel(row.start_time, row.end_time) }}</span>
-                  <button class="text-gray-300 hover:text-red-400 transition-colors leading-none" title="Remove"
+                  <button class="text-gray-300 hover:text-red-400 transition-colors leading-none" :title="t('common.remove')"
                     @click="removeShift('A', day.value, si)"><i class="pi pi-times text-[10px]" /></button>
                 </div>
               </div>
               <button
                 class="flex-1 flex items-center justify-center py-1.5 transition-colors"
                 :class="cellsFor('A', day.value).length === 0 ? 'text-gray-200 hover:text-gray-400 hover:bg-gray-50' : 'text-gray-200 hover:text-green-500 hover:bg-green-50'"
-                :title="cellsFor('A', day.value).length === 0 ? 'Add shift' : 'Add another shift'"
+                :title="cellsFor('A', day.value).length === 0 ? t('manager.weekTemplate.addShift') : t('manager.weekTemplate.addAnotherShift')"
                 @click="addShift('A', day.value)">
                 <i class="pi pi-plus text-[10px]" />
               </button>
@@ -79,11 +75,11 @@
       <div class="flex justify-center">
         <button
           class="flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-gray-300 bg-white text-xs font-medium text-gray-600 hover:border-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors shadow-sm"
-          title="Swap all shifts: week A ↔ week B"
+          :title="t('manager.weekTemplate.swapTooltip')"
           @click="swapWeeks"
         >
           <i class="pi pi-arrow-right-arrow-left text-[11px]" />
-          Swap A ↔ B
+          {{ t('manager.weekTemplate.swap') }}
         </button>
       </div>
 
@@ -91,9 +87,9 @@
       <div class="rounded-xl border border-amber-200 overflow-hidden">
         <div class="flex items-center gap-3 px-4 py-2.5 bg-amber-50">
           <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-amber-200 text-amber-800">B</span>
-          <span class="text-sm font-semibold text-amber-800">Week B</span>
-          <span class="text-xs text-gray-400 ml-1">{{ shiftsFor('B').length }} shift{{ shiftsFor('B').length !== 1 ? 's' : '' }}</span>
-          <span v-if="totalHours('B') > 0" class="ml-auto text-xs font-medium text-amber-600">{{ totalHours('B') }}h / week</span>
+          <span class="text-sm font-semibold text-amber-800">{{ t('manager.weekTemplate.weekB') }}</span>
+          <span class="text-xs text-gray-400 ml-1">{{ t('manager.weekTemplate.shiftCount', shiftsFor('B').length, { n: shiftsFor('B').length }) }}</span>
+          <span v-if="totalHours('B') > 0" class="ml-auto text-xs font-medium text-amber-600">{{ t('manager.weekTemplate.hoursPerWeek', { n: totalHours('B') }) }}</span>
         </div>
         <div class="bg-white">
           <div class="grid grid-cols-7 divide-x divide-gray-100 border-b border-gray-100">
@@ -112,19 +108,19 @@
                   class="w-full text-xs border border-gray-200 rounded px-1 py-0.5 font-mono text-center focus:outline-none focus:ring-1 focus:ring-amber-300 focus:border-amber-400" />
                 <select v-model="row.role"
                   class="w-full text-[10px] border border-gray-200 rounded px-1 py-0.5 text-gray-600 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300 focus:border-amber-400 truncate">
-                  <option value="">Any role</option>
+                  <option value="">{{ t('manager.weekTemplate.anyRole') }}</option>
                   <option v-for="r in optionsStore.jobRoles" :key="r.value" :value="r.value">{{ r.label }}</option>
                 </select>
                 <div class="flex items-center justify-between pb-1">
                   <span class="text-[10px] text-gray-400 leading-none">{{ durationLabel(row.start_time, row.end_time) }}</span>
-                  <button class="text-gray-300 hover:text-red-400 transition-colors leading-none" title="Remove"
+                  <button class="text-gray-300 hover:text-red-400 transition-colors leading-none" :title="t('common.remove')"
                     @click="removeShift('B', day.value, si)"><i class="pi pi-times text-[10px]" /></button>
                 </div>
               </div>
               <button
                 class="flex-1 flex items-center justify-center py-1.5 transition-colors"
                 :class="cellsFor('B', day.value).length === 0 ? 'text-gray-200 hover:text-gray-400 hover:bg-gray-50' : 'text-gray-200 hover:text-green-500 hover:bg-green-50'"
-                :title="cellsFor('B', day.value).length === 0 ? 'Add shift' : 'Add another shift'"
+                :title="cellsFor('B', day.value).length === 0 ? t('manager.weekTemplate.addShift') : t('manager.weekTemplate.addAnotherShift')"
                 @click="addShift('B', day.value)">
                 <i class="pi pi-plus text-[10px]" />
               </button>
@@ -141,9 +137,9 @@
           {{ totalRows }} shift{{ totalRows !== 1 ? 's' : '' }} across both weeks
         </span>
         <div class="flex gap-2">
-          <Button label="Cancel" outlined @click="visible = false" />
+          <Button :label="t('common.cancel')" outlined @click="visible = false" />
           <Button
-            label="Save planning"
+            :label="t('manager.weekTemplate.saveButton')"
             icon="pi pi-check"
             :loading="store.saving"
             @click="save"
@@ -151,18 +147,20 @@
         </div>
       </div>
     </template>
-  </Drawer>
+  </AppDrawer>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import Drawer from 'primevue/drawer'
+import { useI18n } from 'vue-i18n'
+import AppDrawer from '@/components/common/AppDrawer.vue'
 import Button from 'primevue/button'
 import { useWeekTemplateStore } from '@/features/templates/stores/weekTemplateStore'
 import type { WeekTemplateEntry } from '@/features/templates/stores/weekTemplateStore'
 import { useOptionsStore } from '@/stores/optionsStore'
 
 const optionsStore = useOptionsStore()
+const { t } = useI18n()
 
 // ── Props / emits ─────────────────────────────────────────────────────────────
 
@@ -208,15 +206,15 @@ watch(
 
 // ── Day options (Go convention: 0=Sun, 1=Mon … 6=Sat) ────────────────────────
 
-const DAY_OPTIONS = [
-  { value: 1, label: 'Mon' },
-  { value: 2, label: 'Tue' },
-  { value: 3, label: 'Wed' },
-  { value: 4, label: 'Thu' },
-  { value: 5, label: 'Fri' },
-  { value: 6, label: 'Sat' },
-  { value: 0, label: 'Sun' },
-]
+const DAY_OPTIONS = computed(() => [
+  { value: 1, label: t('manager.weekTemplate.dayMon') },
+  { value: 2, label: t('manager.weekTemplate.dayTue') },
+  { value: 3, label: t('manager.weekTemplate.dayWed') },
+  { value: 4, label: t('manager.weekTemplate.dayThu') },
+  { value: 5, label: t('manager.weekTemplate.dayFri') },
+  { value: 6, label: t('manager.weekTemplate.daySat') },
+  { value: 0, label: t('manager.weekTemplate.daySun') },
+])
 
 // ── Cell helpers — support multiple shifts per day ────────────────────────────
 

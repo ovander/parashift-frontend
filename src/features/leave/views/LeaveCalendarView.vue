@@ -13,7 +13,7 @@
     <!-- Empty state -->
     <div v-else-if="leaveStore.leaves.length === 0" class="text-center py-12 text-gray-400">
       <i class="pi pi-calendar text-3xl block mb-3" />
-      <p>No leave requests.</p>
+      <p>{{ t('leave.noRequests') }}</p>
     </div>
 
     <!-- Leave request cards -->
@@ -24,7 +24,7 @@
         class="bg-white rounded-xl border border-gray-200 p-4 flex items-start justify-between gap-3"
       >
         <div class="min-w-0">
-          <p class="text-sm font-semibold text-gray-900 capitalize">{{ leave.type }}</p>
+          <p class="text-sm font-semibold text-gray-900">{{ t(`leave.type.${leave.type}`, leave.type) }}</p>
           <p class="text-xs text-gray-500 mt-0.5">{{ leave.start_date }} – {{ leave.end_date }}</p>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
@@ -33,7 +33,7 @@
             v-if="leave.status === 'pending'"
             icon="pi pi-times"
             text rounded size="small" severity="danger"
-            v-tooltip.top="'Cancel request'"
+            v-tooltip.top="t('leave.tooltipCancel')"
             @click="confirmCancel(leave.id)"
           />
         </div>
@@ -65,7 +65,7 @@ function statusSeverity(s: LeaveStatus) {
 }
 
 function confirmCancel(leaveId: string) {
-  if (!window.confirm('Cancel this leave request? This cannot be undone.')) return
+  if (!window.confirm(t('leave.confirmCancel'))) return
   leaveStore.cancelLeave(ctx.storeId, leaveId)
 }
 

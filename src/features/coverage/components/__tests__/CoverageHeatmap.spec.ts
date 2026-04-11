@@ -41,12 +41,12 @@ describe('CoverageHeatmap', () => {
     expect(wrapper.text()).toContain('Lundi de Pâques')
   })
 
-  it('renders the "Jour férié" label inside a holiday row', () => {
+  it('renders the "Public holiday" label inside a holiday row', () => {
     const holidays = new Map([['2026-04-06', 'Lundi de Pâques']])
     const wrapper = mount(CoverageHeatmap, {
       props: { report: emptyReport, holidays },
     })
-    expect(wrapper.text()).toContain('Jour férié')
+    expect(wrapper.text()).toContain('Public holiday')
   })
 
   it('applies amber background classes to the holiday row', () => {
@@ -105,19 +105,19 @@ describe('CoverageHeatmap', () => {
     const holidays = new Map([['2026-04-06', 'Lundi de Pâques']]) // holiday on Monday
     const wrapper  = mount(CoverageHeatmap, { props: { report, holidays } })
 
-    // Both the holiday name and the Jour férié label must appear
+    // Both the holiday name and the Public holiday label must appear
     expect(wrapper.text()).toContain('Lundi de Pâques')
-    expect(wrapper.text()).toContain('Jour férié')
+    expect(wrapper.text()).toContain('Public holiday')
     // At least one normal coverage cell (bg-gray-100 = empty slot) must exist
     expect(wrapper.find('.bg-gray-100').exists()).toBe(true)
   })
 
   // ── Legend ─────────────────────────────────────────────────────────────────
 
-  it('includes a Jour férié legend entry', () => {
+  it('includes a Public holiday legend entry', () => {
     const wrapper = mount(CoverageHeatmap, { props: { report: emptyReport } })
     // The legend always appears regardless of whether holidays are present
-    expect(wrapper.text()).toContain('Jour férié')
+    expect(wrapper.text()).toContain('Public holiday')
   })
 
   // ── Summary row ────────────────────────────────────────────────────────────

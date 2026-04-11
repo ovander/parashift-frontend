@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '@/composables/useApi'
 import { useDirtyState } from '@/composables/useDirtyState'
 import { useUiStore } from '@/stores/ui'
@@ -9,6 +10,7 @@ const log = createDevlog('LeaveStore')
 import type { LeaveRequest, LeaveImpact, LeaveType } from '@/types'
 
 export const useLeaveStore = defineStore('leave', () => {
+  const { t } = useI18n()
   const dirty   = useDirtyState('leave')
   const leaves  = ref<LeaveRequest[]>([])
   const loading = ref(false)
@@ -23,7 +25,7 @@ export const useLeaveStore = defineStore('leave', () => {
       log.info('fetchLeave ←', { count: leaves.value.length })
     } catch (err) {
       log.error('fetchLeave failed', err)
-      useUiStore().showToast('error', 'Failed to load leave', extractApiError(err))
+      useUiStore().showToast('error', t('errors.loadFailed'), extractApiError(err))
     } finally {
       loading.value = false
     }
@@ -38,7 +40,7 @@ export const useLeaveStore = defineStore('leave', () => {
       leaves.value.push(res.data)
       dirty.markClean()
       log.info('createLeave ← created', { id: res.data.id, status: res.data.status })
-      useUiStore().showToast('success', 'Leave request submitted')
+      useUiStore().showToast('success', t('leave.submitted'))
     } catch (err) {
       log.error('createLeave failed', err)
       dirty.markError(extractApiError(err))
@@ -52,10 +54,10 @@ export const useLeaveStore = defineStore('leave', () => {
       await api.delete(`/api/v1/stores/${storeId}/leave-requests/${leaveId}`)
       leaves.value = leaves.value.filter((l) => l.id !== leaveId)
       log.info('cancelLeave ← removed', { leaveId })
-      useUiStore().showToast('success', 'Leave request cancelled')
+      useUiStore().showToast('success', t('leave.cancelled'))
     } catch (err) {
       log.error('cancelLeave failed', err)
-      useUiStore().showToast('error', 'Cancel failed', extractApiError(err))
+      useUiStore().showToast('error', t('leave.leaveCancelFailed'), extractApiError(err))
     }
   }
 
@@ -80,10 +82,10 @@ export const useLeaveStore = defineStore('leave', () => {
       const idx = leaves.value.findIndex((l) => l.id === leaveId)
       if (idx !== -1) leaves.value[idx] = res.data
       log.info('approveLeave ← approved', { leaveId, newStatus: res.data.status })
-      useUiStore().showToast('success', 'Leave approved')
+      useUiStore().showToast('success', t('leave.leaveApproved'))
     } catch (err) {
       log.error('approveLeave failed', err)
-      useUiStore().showToast('error', 'Approve failed', extractApiError(err))
+      useUiStore().showToast('error', t('leave.leaveApproveFailed'), extractApiError(err))
     }
   }
 
@@ -97,10 +99,10 @@ export const useLeaveStore = defineStore('leave', () => {
       const idx = leaves.value.findIndex((l) => l.id === leaveId)
       if (idx !== -1) leaves.value[idx] = res.data
       log.info('rejectLeave ← rejected', { leaveId, newStatus: res.data.status })
-      useUiStore().showToast('success', 'Leave rejected')
+      useUiStore().showToast('success', t('leave.leaveRejected'))
     } catch (err) {
       log.error('rejectLeave failed', err)
-      useUiStore().showToast('error', 'Reject failed', extractApiError(err))
+      useUiStore().showToast('error', t('leave.leaveRejectFailed'), extractApiError(err))
     }
   }
 

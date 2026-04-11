@@ -10,7 +10,7 @@
     <div class="relative">
       <InputText
         v-model="search"
-        placeholder="Search employees…"
+        :placeholder="t('schedule.operate.searchPlaceholder')"
         class="w-full"
         autofocus
       />
@@ -42,15 +42,13 @@
       >
         <i class="pi pi-users text-2xl block mb-2" />
         <!-- Distinguish "search found nothing" from "no one has this role" -->
-        <p v-if="search" class="text-sm">
-          No match for "{{ search }}" with role
-          <strong class="capitalize">{{ shift.role }}</strong>
-        </p>
+        <p v-if="search" class="text-sm">{{ t('schedule.quickAssign.noMatchSearch', { search, role: shift.role }) }}</p>
         <p v-else class="text-sm">
-          No employees with role
-          <strong class="capitalize">{{ shift.role }}</strong>.
+          <i18n-t keypath="schedule.quickAssign.noMatchRole" tag="span">
+            <template #role><strong>{{ shift.role }}</strong></template>
+          </i18n-t>
           <br />
-          <span class="text-xs text-gray-300">Check job_role data in Settings → Employees.</span>
+          <span class="text-xs text-gray-300">{{ t('schedule.quickAssign.checkSettings') }}</span>
         </p>
       </div>
 
@@ -64,6 +62,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import InputText from 'primevue/inputtext'
 import Skeleton from 'primevue/skeleton'
 import { useEmployeeStore } from '@/features/employees/stores/employeeStore'
@@ -75,6 +74,7 @@ import type { ShiftInstance } from '@/types'
 const props = defineProps<{ shift: ShiftInstance }>()
 const emit  = defineEmits<{ assigned: [] }>()
 
+const { t }         = useI18n()
 const employeeStore = useEmployeeStore()
 const scheduleStore = useScheduleStore()
 const ctx           = useStoreContext()
@@ -100,10 +100,10 @@ async function assign(employeeId: string) {
   assigningId.value = employeeId
   try {
     await scheduleStore.assign(ctx.storeId, props.shift.id, employeeId)
-    toast.add({ severity: 'success', summary: 'Assigned', detail: 'Employee assigned to shift', life: 2000 })
+    toast.add({ severity: 'success', summary: t('schedule.quickAssign.assigned'), detail: t('schedule.quickAssign.assignedDetail'), life: 2000 })
     emit('assigned')
   } catch {
-    toast.add({ severity: 'error', summary: 'Could not assign', life: 3000 })
+    toast.add({ severity: 'error', summary: t('schedule.quickAssign.assignFailed'), life: 3000 })
   } finally {
     assigning.value   = false
     assigningId.value = null

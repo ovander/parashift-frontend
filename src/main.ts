@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import * as Sentry from '@sentry/vue'
 import App from './App.vue'
 import router from './router'
 import { i18n } from './plugins/i18n'
@@ -30,6 +31,20 @@ app.use(createPinia())
 app.use(router)
 app.use(i18n)
 setupPrimeVue(app)
+
+// ── Sentry error monitoring ───────────────────────────────────────────────────
+// Enabled only when VITE_SENTRY_DSN is set (leave it unset in development).
+if (import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    app,
+    dsn: import.meta.env.VITE_SENTRY_DSN as string,
+    environment: import.meta.env.MODE,
+    integrations: [
+      Sentry.browserTracingIntegration({ router }),
+    ],
+    tracesSampleRate: 0.1,
+  })
+}
 
 app.mount('#app')
 devlog.info('app mounted')

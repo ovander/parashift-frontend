@@ -3,6 +3,11 @@ import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 import { execSync } from 'child_process'
 
+function gitVersion(): string {
+  try { return execSync('git describe --tags --always --dirty').toString().trim() }
+  catch { return 'dev' }
+}
+
 function gitCommit(): string {
   try { return execSync('git rev-parse --short HEAD').toString().trim() }
   catch { return 'unknown' }
@@ -10,8 +15,8 @@ function gitCommit(): string {
 
 export default defineConfig({
   define: {
-    __APP_VERSION__:    JSON.stringify(process.env.npm_package_version ?? 'dev'),
-    __APP_COMMIT__:     JSON.stringify(process.env.VITE_COMMIT ?? gitCommit()),
+    __APP_VERSION__:    JSON.stringify(gitVersion()),
+    __APP_COMMIT__:     JSON.stringify(gitCommit()),
     __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
   plugins: [vue()],

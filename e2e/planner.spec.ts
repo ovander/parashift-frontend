@@ -63,9 +63,9 @@ test.describe('Planner view', () => {
   test('week label shows correct date range', async ({ page }) => {
     await injectStoreContext(page, { storeId: STORE_ID, weekStart: WEEK_START })
     await page.goto(`/stores/${STORE_ID}/planner`)
-    // Toolbar label + FullCalendar heading both show the date — use .first() to avoid strict mode
-    await expect(page.getByText(/Mar 30/).first()).toBeVisible()
-    await expect(page.getByText(/Apr 5/).first()).toBeVisible()
+    // Toolbar renders dates in en-GB format ("30 Mar … 5 Apr …") — use .first() to avoid strict mode
+    await expect(page.getByText(/30 Mar/).first()).toBeVisible()
+    await expect(page.getByText(/5 Apr/).first()).toBeVisible()
   })
 
   test('assigned shifts appear as calendar events', async ({ page }) => {
@@ -126,7 +126,7 @@ test.describe('Planner view', () => {
     await page.goto(`/stores/${STORE_ID}/planner`)
     // PrimeVue renders icon as child <span> — target <span> to avoid <i> conflicts
     await page.locator('button:has(span.pi-chevron-left)').first().click()
-    await expect(page.getByText(/Mar 23/)).toBeVisible()
+    await expect(page.getByText(/23 Mar/)).toBeVisible()
   })
 
   test('nextWeek button advances to next week', async ({ page }) => {
@@ -134,7 +134,7 @@ test.describe('Planner view', () => {
     await page.goto(`/stores/${STORE_ID}/planner`)
     // PrimeVue renders icon as child <span> — target <span> to avoid <i> conflicts
     await page.locator('button:has(span.pi-chevron-right)').first().click()
-    await expect(page.getByText(/Apr 6/).first()).toBeVisible()
+    await expect(page.getByText(/6 Apr/).first()).toBeVisible()
   })
 })
 
@@ -244,7 +244,7 @@ test.describe('Employee MyWeek view', () => {
     await page.goto(`/stores/${STORE_ID}/my-week`)
     // PrimeVue renders icon as child <span> — target <span> to avoid <i> conflicts
     await page.locator('button:has(span.pi-chevron-left)').first().click()
-    await expect(page.getByText(/Mar 23/)).toBeVisible()
+    await expect(page.getByText(/23 Mar/)).toBeVisible()
   })
 })
 

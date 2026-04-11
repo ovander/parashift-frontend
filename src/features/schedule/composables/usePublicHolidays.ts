@@ -7,27 +7,53 @@ export interface PublicHoliday {
   zone: string
 }
 
+// Module-level singletons — shared across all component instances so that
+// TodayView, WeekStrip, etc. never fire duplicate requests for the same year.
+const _cache    = new Map<number, PublicHoliday[]>()
+const _inflight = new Map<number, Promise<PublicHoliday[]>>()
+
+/**
+ * Clears the in-memory holiday cache and any in-flight de-duplication state.
+ * Intended for use in unit tests only (call in `beforeEach` to isolate tests).
+ */
+export function clearHolidayCache(): void {
+  _cache.clear()
+  _inflight.clear()
+}
+
 /**
  * Fetches public holidays for the years visible in the current planner week.
  * Re-fetches automatically when weekStart changes year.
  * Results are cached by year so navigation within the same year is instant.
+ * In-flight deduplication ensures only one HTTP request per year at a time,
+ * even when multiple components mount simultaneously.
  */
 export function usePublicHolidays(weekStart: Ref<string>) {
   const api      = useApi()
   const holidays = ref<PublicHoliday[]>([])
-  const cache    = new Map<number, PublicHoliday[]>()
 
   async function fetchYear(year: number): Promise<PublicHoliday[]> {
-    if (cache.has(year)) return cache.get(year)!
-    try {
-      const res  = await api.get<PublicHoliday[]>('/api/v1/public-holidays', { params: { year } })
-      const data = res.data ?? []
-      cache.set(year, data)
-      return data
-    } catch {
-      // Non-fatal: if the backend can't fetch from the gov API we still display the planner
-      return []
-    }
+    if (_cache.has(year))    return _cache.get(year)!
+    if (_inflight.has(year)) return _inflight.get(year)!
+
+    const promise = api
+      .get<PublicHoliday[]>('/api/v1/public-holidays', { params: { year } })
+      .then((res) => {
+        const data = res.data ?? []
+        _cache.set(year, data)
+        return data
+      })
+      .catch(() => {
+        // Non-fatal: if the backend can't fetch from the gov API we still display the planner.
+        // Don't cache the failure so a page reload can retry.
+        return [] as PublicHoliday[]
+      })
+      .finally(() => {
+        _inflight.delete(year)
+      })
+
+    _inflight.set(year, promise)
+    return promise
   }
 
   async function load() {

@@ -21,7 +21,7 @@
             :style="`width: ${hours.length * 40 + (hours.length - 1) * 2}px`"
           >
             <span class="text-[11px] font-semibold text-amber-700">🎉 {{ holidayMap.get(date) }}</span>
-            <span class="text-[10px] text-amber-500 italic">Jour férié</span>
+            <span class="text-[10px] text-amber-500 italic">{{ t('coverage.publicHoliday') }}</span>
           </div>
         </template>
 
@@ -42,20 +42,20 @@
 
       <!-- Summary row -->
       <div class="mt-3 text-xs text-gray-500 flex gap-6">
-        <span>Total slots: <strong>{{ report.total_slots }}</strong></span>
+        <span>{{ t('coverage.totalSlots') }} <strong>{{ report.total_slots }}</strong></span>
         <span :class="report.gap_count > 0 ? 'text-red-600 font-semibold' : ''">
-          Gaps: <strong>{{ report.gap_count }}</strong>
+          {{ t('coverage.gaps') }} <strong>{{ report.gap_count }}</strong>
         </span>
       </div>
 
       <!-- Legend -->
       <div class="flex items-center gap-4 mt-3 text-xs text-gray-500">
-        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-green-400" /> OK</div>
-        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-red-300" /> Understaffed</div>
-        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-purple-300" /> Missing role</div>
-        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-amber-300" /> Overstaffed</div>
-        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-gray-100" /> No requirement</div>
-        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-amber-50 border border-amber-200" /> Jour férié</div>
+        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-green-400" /> {{ t('coverage.ok') }}</div>
+        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-red-300" /> {{ t('coverage.understaffed') }}</div>
+        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-purple-300" /> {{ t('coverage.missingRole') }}</div>
+        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-amber-300" /> {{ t('coverage.overstaffed') }}</div>
+        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-gray-100" /> {{ t('coverage.noRequirement') }}</div>
+        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-amber-50 border border-amber-200" /> {{ t('coverage.publicHoliday') }}</div>
       </div>
     </div>
   </div>
@@ -63,7 +63,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { CoverageReport, CoverageSlot } from '@/types'
+
+const { t, locale } = useI18n()
 
 const props = defineProps<{
   report: CoverageReport
@@ -117,17 +120,16 @@ function cellColor(date: string, hour: number): string {
 
 function cellTitle(date: string, hour: number): string {
   const slot = getSlot(date, hour)
-  if (!slot) return `${date} ${hour}:00 — no requirement`
+  if (!slot) return `${date} ${hour}:00 — ${t('coverage.noRequirementTooltip')}`
   let title = `${date} ${hour}:00 — ${slot.assigned_count}/${slot.required_count} (${slot.status})`
   if (slot.missing_role && slot.required_role)
-    title += ` — needs role "${slot.required_role}" (employees have "manager" or "employee")`
+    title += ` — needs role "${slot.required_role}"`
   return title
 }
 
 function formatDay(isoDate: string): string {
-  // Parse YYYY-MM-DD directly to avoid timezone issues with new Date()
   const [y, m, d] = isoDate.split('-').map(Number)
   const date = new Date(y, m - 1, d)
-  return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+  return date.toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 </script>

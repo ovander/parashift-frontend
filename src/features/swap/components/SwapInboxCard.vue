@@ -13,7 +13,7 @@
       class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm"
     >
       <p class="text-gray-700 mb-2">
-        <strong>{{ swap.requester_id }}</strong> wants to swap their shift
+        <strong>{{ swap.requester?.name ?? swap.requester_id }}</strong> wants to swap their shift
         <span v-if="swap.note" class="italic text-gray-500"> — "{{ swap.note }}"</span>
       </p>
       <div class="flex gap-2">

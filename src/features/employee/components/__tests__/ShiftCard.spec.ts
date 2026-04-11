@@ -8,9 +8,6 @@ import ShiftCard from '../ShiftCard.vue'
 import type { Assignment, ShiftInstance } from '@/types'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({ t: (key: string) => key }),
-}))
 vi.mock('@/features/swap/components/SwapRequestDialog.vue', () => ({
   default: {
     name: 'SwapRequestDialog',

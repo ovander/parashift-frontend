@@ -20,15 +20,17 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { usePlannerLayers } from '../composables/usePlannerLayers'
 import type { PlannerLayer } from '@/types'
 
+const { t } = useI18n()
 const { toggle, isActive } = usePlannerLayers()
 
 const layerDefs: { key: PlannerLayer; label: string; icon: string }[] = [
-  { key: 'core',       label: 'Core',       icon: 'pi pi-calendar' },
-  { key: 'coverage',   label: 'Coverage',   icon: 'pi pi-chart-bar' },
-  { key: 'violations', label: 'Violations', icon: 'pi pi-exclamation-triangle' },
-  { key: 'ai',         label: 'AI',         icon: 'pi pi-sparkles' },
+  { key: 'core',       label: t('schedule.layers.core'),       icon: 'pi pi-calendar' },
+  { key: 'coverage',   label: t('schedule.layers.coverage'),   icon: 'pi pi-chart-bar' },
+  { key: 'violations', label: t('schedule.layers.violations'), icon: 'pi pi-exclamation-triangle' },
+  { key: 'ai',         label: t('schedule.layers.ai'),         icon: 'pi pi-sparkles' },
 ]
 </script>

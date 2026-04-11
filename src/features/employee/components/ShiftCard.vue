@@ -3,13 +3,13 @@
     <template #header>
       <div class="flex items-center justify-between p-4 pb-0">
         <!-- Sprint 1.4: fixed type — uses canonical Assignment from @/types -->
-        <span class="font-semibold text-gray-800 capitalize">{{ shift?.role ?? 'Shift' }}</span>
+        <span class="font-semibold text-gray-800 capitalize">{{ shift?.role ? shift.role.replace(/_/g, ' ') : '—' }}</span>
         <div class="flex items-center gap-2">
           <!-- Sprint 5.2: acknowledgement badge (green once confirmed) -->
           <Tag
             v-if="shift?.status === 'PUBLISHED'"
             :severity="isAcknowledged ? 'success' : 'warning'"
-            :value="isAcknowledged ? 'Confirmed' : 'Pending confirmation'"
+            :value="isAcknowledged ? t('schedule.confirmed') : t('schedule.pendingConfirmation')"
             class="text-xs"
           />
           <Tag v-else :value="shift?.date" severity="secondary" />
@@ -55,7 +55,7 @@
         <!-- Sprint 5.2: confirm shift button — shown for published, unacknowledged -->
         <Button
           v-if="shift?.status === 'PUBLISHED' && !isAcknowledged"
-          label="Confirm shift"
+          :label="t('schedule.confirmShift')"
           icon="pi pi-check"
           size="small"
           severity="success"

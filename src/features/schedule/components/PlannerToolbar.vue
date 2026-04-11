@@ -31,7 +31,7 @@
       severity="warning"
       text
       rounded
-      v-tooltip.bottom="'Regenerate: delete all shifts & re-project from A/B templates'"
+      v-tooltip.bottom="t('schedule.toolbar.regenerateTooltip')"
       @click="confirmRegenerate"
     />
 
@@ -42,7 +42,7 @@
       severity="danger"
       text
       rounded
-      v-tooltip.bottom="'Reset: clear all assignments for this week'"
+      v-tooltip.bottom="t('schedule.toolbar.resetTooltip')"
       @click="confirmReset"
     />
 
@@ -62,12 +62,11 @@
   </div>
 
   <!-- Audit trail dialog (DEV only) -->
-  <Dialog
+  <ResponsiveDialog
     v-if="isDev"
     v-model:visible="auditOpen"
-    header="🔍 Planner Audit Trail"
-    modal
-    :style="{ width: '680px', maxHeight: '80vh' }"
+    :header="t('schedule.toolbar.auditDialogTitle')"
+    size="lg"
     :pt="{ content: { style: 'overflow-y: auto' } }"
   >
     <div class="font-mono text-xs space-y-4 text-gray-800">
@@ -91,9 +90,9 @@
           <div class="bg-gray-50 px-3 py-1.5 flex items-center gap-3 border-b border-gray-200">
             <span class="font-semibold">{{ s.date }} {{ s.start }}–{{ s.end }}</span>
             <span v-if="s.role" class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px]">{{ s.role }}</span>
-            <span class="text-gray-400">min {{ s.minStaff }} staff</span>
+            <span class="text-gray-400">{{ t('schedule.toolbar.minStaff') }} {{ s.minStaff }} staff</span>
             <span :class="s.assigned >= s.minStaff ? 'text-green-600' : 'text-red-500'" class="ml-auto">
-              {{ s.assigned }}/{{ s.minStaff }} assigned
+              {{ s.assigned }}/{{ s.minStaff }} {{ t('schedule.toolbar.assigned') }}
             </span>
           </div>
           <div v-if="s.employees.length" class="divide-y divide-gray-100">
@@ -111,14 +110,14 @@
               >⚠ role mismatch</span>
             </div>
           </div>
-          <div v-else class="px-3 py-1 text-gray-400 italic">No assignments</div>
+          <div v-else class="px-3 py-1 text-gray-400 italic">{{ t('schedule.toolbar.noAssignments') }}</div>
         </div>
       </div>
 
       <!-- Coverage gaps -->
       <div v-if="auditData.gaps.length">
         <div class="font-semibold text-gray-700 mb-2 uppercase tracking-wide text-[10px]">
-          Coverage gaps ({{ auditData.gaps.length }})
+          {{ t('schedule.toolbar.coverageGaps') }} ({{ auditData.gaps.length }})
         </div>
         <div
           v-for="g in auditData.gaps"
@@ -129,14 +128,14 @@
           {{ g.label }}
         </div>
       </div>
-      <div v-else class="text-green-600">✓ No coverage gaps</div>
+      <div v-else class="text-green-600">{{ t('schedule.toolbar.noCoverageGaps') }}</div>
     </div>
 
     <template #footer>
       <Button label="Copy JSON" icon="pi pi-copy" outlined size="small" @click="copyAuditJson" />
-      <Button label="Close" size="small" @click="auditOpen = false" />
+      <Button :label="t('common.close')" size="small" @click="auditOpen = false" />
     </template>
-  </Dialog>
+  </ResponsiveDialog>
 
   <!-- Reset week confirmation dialog -->
   <ConfirmDialog group="resetWeek" />
@@ -146,11 +145,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Divider from 'primevue/divider'
-import Dialog from 'primevue/dialog'
+import ResponsiveDialog from '@/components/common/ResponsiveDialog.vue'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
 import { useStoreContext } from '@/stores/storeContext'
@@ -158,8 +157,9 @@ import { useScheduleStore } from '../stores/scheduleStore'
 import { useEmployeeStore } from '@/features/employees/stores/employeeStore'
 import { useCoverageStore } from '@/features/coverage/stores/coverageStore'
 import KSaveBanner from '@/components/KSaveBanner.vue'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const ctx           = useStoreContext()
 const scheduleStore = useScheduleStore()
 const employeeStore = useEmployeeStore()
@@ -170,21 +170,18 @@ const confirm       = useConfirm()
 const isDev = import.meta.env.DEV
 
 // ── AI button label: text on lg+, undefined (icon-only) on smaller screens ─
-const isLargeScreen = ref(window.innerWidth >= 1024)
-function updateScreenSize() { isLargeScreen.value = window.innerWidth >= 1024 }
-onMounted(()  => window.addEventListener('resize', updateScreenSize))
-onUnmounted(() => window.removeEventListener('resize', updateScreenSize))
-const aiLabel = computed(() => isLargeScreen.value ? t('ai.suggest') : undefined)
+const { isDesktop } = useBreakpoint()
+const aiLabel = computed(() => isDesktop.value ? t('ai.suggest') : undefined)
 
 // ── Reset week ─────────────────────────────────────────────────────────
 function confirmReset() {
   confirm.require({
     group:   'resetWeek',
-    header:  'Reset week assignments',
-    message: `This will permanently remove all assignments for the week of ${weekLabel.value}. Shift templates are not affected. Continue?`,
+    header:  t('schedule.toolbar.resetConfirmTitle'),
+    message: t('schedule.toolbar.resetConfirmMessage', { weekLabel: weekLabel.value }),
     icon:    'pi pi-exclamation-triangle',
-    rejectLabel:  'Cancel',
-    acceptLabel:  'Yes, reset',
+    rejectLabel:  t('common.cancel'),
+    acceptLabel:  t('schedule.toolbar.resetConfirm'),
     acceptClass:  'p-button-danger',
     accept: async () => {
       try {
@@ -200,11 +197,11 @@ function confirmReset() {
 function confirmRegenerate() {
   confirm.require({
     group:   'regenerateWeek',
-    header:  'Regenerate schedule',
-    message: `This will delete ALL shifts and assignments for the week of ${weekLabel.value} and re-project from A/B templates. Manual shifts will be lost. Continue?`,
+    header:  t('schedule.toolbar.regenerateConfirmTitle'),
+    message: t('schedule.toolbar.regenerateConfirmMessage', { weekLabel: weekLabel.value }),
     icon:    'pi pi-refresh',
-    rejectLabel:  'Cancel',
-    acceptLabel:  'Yes, regenerate',
+    rejectLabel:  t('common.cancel'),
+    acceptLabel:  t('schedule.toolbar.regenerateConfirm'),
     acceptClass:  'p-button-warning',
     accept: async () => {
       try {
@@ -274,10 +271,11 @@ function isoWeekNumber(d: Date): number {
 
 const weekLabel = computed(() => {
   // Parse as local midnight so the displayed label is never 1 day early in UTC+ timezones.
-  const start = new Date(ctx.weekStart + 'T00:00:00')
-  const end   = new Date(ctx.weekEnd   + 'T00:00:00')
-  const weekNum = isoWeekNumber(start)
-  return `Week ${weekNum} · ${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+  const start      = new Date(ctx.weekStart + 'T00:00:00')
+  const end        = new Date(ctx.weekEnd   + 'T00:00:00')
+  const weekNum    = isoWeekNumber(start)
+  const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-GB'
+  return `${t('schedule.week')} ${weekNum} · ${start.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' })}`
 })
 
 </script>

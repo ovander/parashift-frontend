@@ -1,0 +1,23 @@
+{
+  "planner": "Planificateur",
+  "myWeek": "Ma semaine",
+  "rules": "Règles",
+  "coverage": "Couverture",
+  "templates": "Modèles",
+  "leave": "Congés",
+  "swaps": "Échanges",
+  "admin": "Administration",
+  "config": "Configuration",
+  "team": "Équipe",
+  "today": "Aujourd'hui",
+  "schedule": "Planning",
+  "configuration": "Configuration",
+  "operations": "Opérations",
+  "organisation": "Organisation",
+  "mySchedule": "Mon planning",
+  "dashboard": "Tableau de bord",
+  "auditLogs": "Journaux d'audit",
+  "stores": "Établissements",
+  "managers": "Managers",
+  "employees": "Employés"
+}

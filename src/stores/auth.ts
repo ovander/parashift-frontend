@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import axios from 'axios'
 import { createDevlog } from '@/utils/logger'
+import { loadLocaleMessages, LOCALE_KEY } from '@/plugins/i18n'
+import { i18n } from '@/plugins/i18n'
 
 const log = createDevlog('AuthStore')
 
@@ -47,6 +49,7 @@ export interface AuthUser {
   position:  'admin' | 'manager' | 'employee'
   job_role?: string   // pharmacist | animator | ... — shift eligibility
   store_id?: string   // present for manager/employee, absent for admin
+  locale?:   'fr' | 'en' // preferred UI locale — synced to vue-i18n on login
 }
 
 interface AuthTokens {
@@ -117,10 +120,60 @@ export const useAuthStore = defineStore('auth', () => {
       })
       user.value = res.data
       log.info('fetchMe ←', { id: res.data.id, position: res.data.position, storeId: res.data.store_id })
+      // T5.2: sync vue-i18n locale from the server-side user preference
+      await syncLocaleFromProfile(res.data)
     } catch (err) {
       log.error('fetchMe failed', err)
       throw err
     }
+  }
+
+  /**
+   * T5.2 — updateLocale
+   *
+   * Persists the user's preferred locale to the backend (PATCH /me/locale)
+   * then syncs the i18n instance and localStorage. Call this from the language
+   * switcher component so the preference survives across sessions.
+   */
+  async function updateLocale(lang: 'fr' | 'en'): Promise<void> {
+    // Persist to backend — non-fatal if it fails (e.g. admin user, network blip).
+    try {
+      await axios.patch(
+        `${apiBase}/api/v1/me/locale`,
+        { locale: lang },
+        { headers: { Authorization: `Bearer ${accessToken.value}` } },
+      )
+    } catch {
+      log.warn('updateLocale: backend persistence failed, applying locale locally only')
+    }
+    if (user.value) user.value = { ...user.value, locale: lang }
+    await loadLocaleMessages(lang)
+    ;(i18n.global.locale as any).value = lang
+    localStorage.setItem(LOCALE_KEY, lang)
+    document.documentElement.setAttribute('lang', lang)
+    log.info('updateLocale ← applied', lang)
+  }
+
+  /**
+   * T5.2 — syncLocaleFromProfile
+   *
+   * After fetching the user's profile, apply the server-side locale preference
+   * to vue-i18n and localStorage so the UI immediately renders in the right language.
+   * A user-selected override in localStorage is honoured when the server returns no
+   * locale (e.g. legacy records) — server locale wins otherwise.
+   */
+  async function syncLocaleFromProfile(profile: AuthUser): Promise<void> {
+    const serverLocale = profile.locale
+    if (!serverLocale) return // no preference on record — keep current locale
+
+    // Load messages for the server locale (idempotent if already loaded)
+    await loadLocaleMessages(serverLocale)
+    // Update the global vue-i18n locale
+    ;(i18n.global.locale as any).value = serverLocale
+    // Persist to localStorage so cold-starts are consistent
+    localStorage.setItem(LOCALE_KEY, serverLocale)
+    document.documentElement.setAttribute('lang', serverLocale)
+    log.debug('syncLocaleFromProfile ← locale set', serverLocale)
   }
 
   async function logout() {
@@ -139,5 +192,5 @@ export const useAuthStore = defineStore('auth', () => {
     log.info('logout ← local state cleared')
   }
 
-  return { user, accessToken, refreshToken, isAuthenticated, callback, refresh, fetchMe, logout }
+  return { user, accessToken, refreshToken, isAuthenticated, callback, refresh, fetchMe, logout, updateLocale, syncLocaleFromProfile }
 })

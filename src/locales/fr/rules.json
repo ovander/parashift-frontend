@@ -1,0 +1,22 @@
+{
+  "title": "Règles de planification",
+  "new": "Nouvelle règle",
+  "type": "Type",
+  "severity": "Sévérité",
+  "description": "Description",
+  "enabled": "Activée",
+  "blocking": "Bloquante",
+  "warning": "Avertissement",
+  "info": "Information",
+  "maxHours": "Heures max",
+  "minRest": "Repos min",
+  "coverage": "Couverture",
+  "roleMatch": "Correspondance rôle",
+  "violation": {
+    "generic": "Violation de règle",
+    "roleMatch": "{name} a le rôle « {role} » mais le quart exige « {required} »",
+    "noOverlap": "{name} est déjà affecté le {date}",
+    "maxHours": "{name} dépasserait la limite de {max}h hebdomadaires ({hours}h actuellement)",
+    "minRest": "{name} n'a que {gap}h de repos (minimum {min}h requis)"
+  }
+}

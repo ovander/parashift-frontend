@@ -1,0 +1,53 @@
+{
+  "title": "Store Configuration",
+  "openingHours": {
+    "title": "Opening hours",
+    "subtitle": "When the store is open each day of the week.",
+    "saveBtn": "Save hours",
+    "open": "Open",
+    "closed": "Closed",
+    "saved": "Opening hours updated"
+  },
+  "coverage": {
+    "title": "Coverage requirements",
+    "subtitle": "How many people per role are needed for each time slot.",
+    "addBtn": "Add requirement",
+    "colDay": "Day",
+    "colTimeSlot": "Time slot",
+    "colMinStaff": "Min staff",
+    "colRole": "Role",
+    "noRequirements": "No coverage requirements yet. Add the first one.",
+    "anyRole": "any",
+    "dialogAddTitle": "Add coverage requirement",
+    "dialogEditTitle": "Edit requirement",
+    "fieldDay": "Day of week",
+    "fieldFrom": "From",
+    "fieldTo": "To",
+    "fieldMinStaff": "Minimum staff",
+    "fieldRole": "Required role",
+    "fieldRoleOptional": "(optional)",
+    "fieldRoleHint": "Leave empty to count any assigned employee.",
+    "anyRoleOption": "Any role",
+    "dialogCancel": "Cancel",
+    "dialogSave": "Save",
+    "dialogAdd": "Add",
+    "added": "Coverage requirement added",
+    "updated": "Requirement updated",
+    "deleted": "Requirement removed"
+  },
+  "exceptions": {
+    "title": "Exceptional opening days",
+    "subtitle": "Sundays or public holidays where the store opens exceptionally. Staff coverage will be checked for these days.",
+    "loading": "Loading…",
+    "none": "No exceptional openings scheduled.",
+    "colDate": "Date",
+    "colNote": "Note",
+    "sunday": "Sunday",
+    "addTitle": "Add an exceptional opening day",
+    "addNote": "Note (optional)",
+    "addNotePlaceholder": "e.g. Inventory, December Sunday…",
+    "addBtn": "Add",
+    "added": "Exception added",
+    "deleted": "Exception deleted"
+  }
+}

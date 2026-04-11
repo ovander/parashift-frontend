@@ -1,7 +1,7 @@
 <template>
   <div class="p-6 space-y-6 overflow-y-auto h-full">
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold text-gray-900">Coverage Dashboard</h1>
+      <h1 class="text-xl font-semibold text-gray-900">{{ t('coverage.dashboard') }}</h1>
       <div class="flex items-center gap-2">
         <!-- View toggle -->
         <div class="flex items-center rounded-lg border border-gray-200 p-0.5 bg-gray-50">
@@ -9,12 +9,12 @@
             class="px-3 py-1 text-sm font-medium rounded-md transition-all"
             :class="viewMode === 'week' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'"
             @click="viewMode = 'week'"
-          >Semaine</button>
+          >{{ t('coverage.viewWeek') }}</button>
           <button
             class="px-3 py-1 text-sm font-medium rounded-md transition-all"
             :class="viewMode === 'month' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'"
             @click="viewMode = 'month'"
-          >Mois</button>
+          >{{ t('coverage.viewMonth') }}</button>
         </div>
 
         <!-- DEV ONLY: Audit trail -->
@@ -46,18 +46,13 @@
     >
       <i class="pi pi-id-card text-purple-500 mt-0.5 flex-shrink-0" />
       <div class="min-w-0">
-        <p class="font-medium text-purple-900">Role requirement not satisfied</p>
+        <p class="font-medium text-purple-900">{{ t('coverage.roleNotSatisfied') }}</p>
         <p class="text-purple-700 mt-1">
-          Your coverage requirements need role
-          <strong>{{ missingRoleNames.join(', ') }}</strong>
-          but none of your employees carry that role.
-          Employees currently have roles: <strong>{{ employeeRoles.join(', ') || '—' }}</strong>.
+          {{ t('coverage.roleNotSatisfiedDesc', { roles: missingRoleNames.join(', '), employeeRoles: employeeRoles.join(', ') || '—' }) }}
         </p>
         <p class="text-purple-600 mt-1">
-          Fix: go to
-          <RouterLink :to="`/stores/${ctx.storeId}/config`" class="underline font-medium">Store Config → Coverage Requirements</RouterLink>
-          and either clear the <em>Required role</em> field or change it to
-          <strong>{{ employeeRoles[0] ?? 'employee' }}</strong>.
+          {{ t('coverage.roleNotSatisfiedFix', { role: employeeRoles[0] ?? 'employee' }) }}
+          (<RouterLink :to="`/stores/${ctx.storeId}/config`" class="underline font-medium">{{ t('coverage.storeConfig') }}</RouterLink>)
         </p>
       </div>
     </div>
@@ -70,7 +65,7 @@
       <CoverageHeatmap v-else-if="coverageStore.coverage" :report="coverageStore.coverage" :holidays="weekHolidayMap" />
       <div v-else class="text-center py-16 text-gray-400">
         <i class="pi pi-chart-bar text-4xl mb-3 block" />
-        No coverage data available.
+        {{ t('coverage.noData') }}
       </div>
     </template>
 
@@ -89,12 +84,11 @@
     </template>
 
     <!-- Audit trail dialog (DEV only) -->
-    <Dialog
+    <ResponsiveDialog
       v-if="isDev"
       v-model:visible="auditOpen"
       header="🔍 Coverage Audit Trail"
-      modal
-      :style="{ width: '680px', maxHeight: '80vh' }"
+      size="lg"
       :pt="{ content: { style: 'overflow-y: auto' } }"
     >
       <div class="font-mono text-xs space-y-4 text-gray-800">
@@ -149,15 +143,16 @@
         <Button label="Copy JSON" icon="pi pi-copy" outlined size="small" @click="copyCoverageAuditJson" />
         <Button label="Close" size="small" @click="auditOpen = false" />
       </template>
-    </Dialog>
+    </ResponsiveDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import Button from 'primevue/button'
-import Dialog from 'primevue/dialog'
+import ResponsiveDialog from '@/components/common/ResponsiveDialog.vue'
 import Skeleton from 'primevue/skeleton'
 import { useCoverageStore } from '../stores/coverageStore'
 import { useStoreContext } from '@/stores/storeContext'
@@ -166,6 +161,7 @@ import { usePublicHolidays } from '@/features/schedule/composables/usePublicHoli
 import CoverageHeatmap from '../components/CoverageHeatmap.vue'
 import CoverageMonthCalendar from '../components/CoverageMonthCalendar.vue'
 
+const { t, locale } = useI18n()
 const coverageStore  = useCoverageStore()
 const ctx            = useStoreContext()
 const employeeStore  = useEmployeeStore()
@@ -194,13 +190,10 @@ function nextMonth() {
   currentMonth.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`
 }
 
-const MONTH_NAMES = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
-]
 const monthLabel = computed(() => {
   const [y, m] = currentMonth.value.split('-').map(Number)
-  return `${MONTH_NAMES[m - 1]} ${y}`
+  const date = new Date(y, m - 1, 1)
+  return date.toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-GB', { month: 'long', year: 'numeric' })
 })
 
 // ── Unified navigation ─────────────────────────────────────────────────────
@@ -208,14 +201,15 @@ function navPrev() { viewMode.value === 'week' ? ctx.prevWeek() : prevMonth() }
 function navNext() { viewMode.value === 'week' ? ctx.nextWeek() : nextMonth() }
 
 const weekLabel = computed(() => {
-  const start = new Date(`${ctx.weekStart}T00:00:00`)
-  const end   = new Date(`${ctx.weekEnd}T00:00:00`)
+  const start      = new Date(`${ctx.weekStart}T00:00:00`)
+  const end        = new Date(`${ctx.weekEnd}T00:00:00`)
+  const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-GB'
   // ISO week number: Thursday of the week determines the year.
   const thu = new Date(start); thu.setDate(thu.getDate() + 3)
   const jan1 = new Date(thu.getFullYear(), 0, 1)
   const isoWeek = Math.ceil(((thu.getTime() - jan1.getTime()) / 86_400_000 + jan1.getDay() + 1) / 7)
-  const dateRange = `${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
-  return `S${isoWeek} · ${dateRange}`
+  const dateRange = `${start.toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: 'numeric' })}`
+  return `${t('schedule.week')} ${isoWeek} · ${dateRange}`
 })
 const navLabel = computed(() => viewMode.value === 'week' ? weekLabel.value : monthLabel.value)
 

@@ -1,6 +1,6 @@
 <template>
   <div class="p-6 space-y-6">
-    <h1 class="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
+    <h1 class="text-xl font-semibold text-gray-900">{{ t('admin.dashboard.title') }}</h1>
 
     <!-- Loading skeletons -->
     <template v-if="loading">
@@ -25,79 +25,79 @@
     >
       <i class="pi pi-exclamation-triangle text-red-500" />
       {{ error }}
-      <Button label="Retry" text size="small" class="ml-auto" @click="load" />
+      <Button :label="t('common.retry')" text size="small" class="ml-auto" @click="load" />
     </div>
 
     <template v-else-if="data">
       <!-- ── Section 1: Organisation ──────────────────────────────────── -->
       <section>
-        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Organisation</h2>
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">{{ t('admin.dashboard.sectionOrg') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <KpiCard
-            label="Total stores"
+            :label="t('admin.dashboard.totalStores')"
             :value="data.organization.totalStores"
             icon="pi-building"
             color="blue"
           />
           <KpiCard
-            label="Active stores"
+            :label="t('admin.dashboard.activeStores')"
             :value="data.organization.activeStores"
             icon="pi-check-circle"
             color="green"
-            hint="Stores with at least one active employee"
+            :hint="t('admin.dashboard.hintActiveStores')"
           />
           <KpiCard
-            label="Inactive stores"
+            :label="t('admin.dashboard.inactiveStores')"
             :value="data.organization.inactiveStores"
             icon="pi-minus-circle"
             color="gray"
-            hint="Stores with no active employees yet"
+            :hint="t('admin.dashboard.hintInactiveStores')"
           />
         </div>
       </section>
 
       <!-- ── Section 2: Users & Onboarding ───────────────────────────── -->
       <section>
-        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Users &amp; Onboarding</h2>
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">{{ t('admin.dashboard.sectionUsers') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <KpiCard
-            label="Total employees"
+            :label="t('admin.dashboard.totalEmployees')"
             :value="data.users.totalEmployees"
             icon="pi-users"
             color="blue"
           />
           <KpiCard
-            label="Managers"
+            :label="t('admin.dashboard.managers')"
             :value="data.users.totalManagers"
             icon="pi-user-edit"
             color="blue"
             :clickable="true"
-            hint="Employees with the manager role"
+            :hint="t('admin.dashboard.hintManagers')"
             @click="navigate('/admin/managers')"
           />
           <KpiCard
-            label="Active employees"
+            :label="t('admin.dashboard.activeEmployees')"
             :value="data.users.activeEmployees"
             icon="pi-user-check"
             color="green"
-            hint="Employees with a bound Socrate account"
+            :hint="t('admin.dashboard.hintActiveEmployees')"
           />
           <KpiCard
-            label="Pending invites"
+            :label="t('admin.dashboard.pendingInvites')"
             :value="data.users.pendingInvites"
             icon="pi-envelope"
             color="amber"
             :clickable="true"
-            hint="Invited by email, not yet logged in"
+            :hint="t('admin.dashboard.hintPendingInvites')"
             @click="navigate('/admin/employees?status=pending')"
           />
           <KpiCard
-            label="Unclaimed links"
+            :label="t('admin.dashboard.unclaimed')"
             :value="data.users.unclaimed"
             icon="pi-link"
             color="orange"
             :clickable="true"
-            hint="Manual invite link generated, not yet used"
+            :hint="t('admin.dashboard.hintUnclaimed')"
             @click="navigate('/admin/employees?status=unclaimed')"
           />
         </div>
@@ -105,33 +105,33 @@
 
       <!-- ── Section 3: Data Integrity ───────────────────────────────── -->
       <section>
-        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Data Integrity</h2>
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">{{ t('admin.dashboard.sectionIntegrity') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <KpiCard
-            label="Employees without store"
+            :label="t('admin.dashboard.noStore')"
             :value="data.integrity.noStore"
             icon="pi-building"
             :color="data.integrity.noStore > 0 ? 'red' : 'gray'"
             :clickable="data.integrity.noStore > 0"
-            hint="Orphaned records — their store was soft-deleted"
+            :hint="t('admin.dashboard.hintNoStore')"
             @click="navigate('/admin/employees?filter=noStore')"
           />
           <KpiCard
-            label="Employees without role"
+            :label="t('admin.dashboard.noRole')"
             :value="data.integrity.noRole"
             icon="pi-shield"
             :color="data.integrity.noRole > 0 ? 'red' : 'gray'"
             :clickable="data.integrity.noRole > 0"
-            hint="Employees with an empty role field"
+            :hint="t('admin.dashboard.hintNoRole')"
             @click="navigate('/admin/employees?filter=noRole')"
           />
           <KpiCard
-            label="Expired invite links"
+            :label="t('admin.dashboard.expiredTokens')"
             :value="data.integrity.expiredTokens"
             icon="pi-clock"
             :color="data.integrity.expiredTokens > 0 ? 'amber' : 'gray'"
             :clickable="data.integrity.expiredTokens > 0"
-            hint="Unclaimed invite links older than 7 days"
+            :hint="t('admin.dashboard.hintExpiredTokens')"
             @click="navigate('/admin/employees?filter=expiredTokens')"
           />
         </div>
@@ -139,7 +139,7 @@
 
       <!-- ── Section 4: Recent Activity ──────────────────────────────── -->
       <section>
-        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Recent Activity</h2>
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">{{ t('admin.dashboard.sectionActivity') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
           <!-- Recent stores -->
@@ -147,19 +147,19 @@
             <template #header>
               <div class="px-5 pt-4 flex items-center gap-2">
                 <i class="pi pi-building text-gray-400 text-sm" />
-                <span class="text-sm font-semibold text-gray-700">Recently created stores</span>
+                <span class="text-sm font-semibold text-gray-700">{{ t('admin.dashboard.recentStores') }}</span>
               </div>
             </template>
             <template #content>
               <DataTable :value="data.activity.recentStores" size="small" :show-gridlines="false">
-                <Column field="name" header="Store" />
-                <Column header="Created" style="width: 140px">
+                <Column field="name" :header="t('admin.dashboard.colStore')" />
+                <Column :header="t('admin.dashboard.colCreated')" style="width: 140px">
                   <template #body="{ data: row }">
                     <span class="text-xs text-gray-500">{{ formatDate(row.createdAt) }}</span>
                   </template>
                 </Column>
                 <template #empty>
-                  <span class="text-sm text-gray-400">No stores yet.</span>
+                  <span class="text-sm text-gray-400">{{ t('admin.dashboard.noStoresYet') }}</span>
                 </template>
               </DataTable>
             </template>
@@ -170,19 +170,19 @@
             <template #header>
               <div class="px-5 pt-4 flex items-center gap-2">
                 <i class="pi pi-envelope text-gray-400 text-sm" />
-                <span class="text-sm font-semibold text-gray-700">Recently invited employees</span>
+                <span class="text-sm font-semibold text-gray-700">{{ t('admin.dashboard.recentInvites') }}</span>
               </div>
             </template>
             <template #content>
               <DataTable :value="data.activity.recentInvites" size="small" :show-gridlines="false">
-                <Column field="email" header="Email" />
-                <Column header="Invited" style="width: 140px">
+                <Column field="email" :header="t('admin.dashboard.colEmail')" />
+                <Column :header="t('admin.dashboard.colInvited')" style="width: 140px">
                   <template #body="{ data: row }">
                     <span class="text-xs text-gray-500">{{ formatDate(row.createdAt) }}</span>
                   </template>
                 </Column>
                 <template #empty>
-                  <span class="text-sm text-gray-400">No invites sent yet.</span>
+                  <span class="text-sm text-gray-400">{{ t('admin.dashboard.noInvitesYet') }}</span>
                 </template>
               </DataTable>
             </template>
@@ -196,6 +196,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import Button    from 'primevue/button'
 import Card      from 'primevue/card'
@@ -216,6 +217,7 @@ interface Dashboard {
 }
 
 // ── State ──────────────────────────────────────────────────────────────────────
+const { t, locale }  = useI18n()
 const router = useRouter()
 const ui     = useUiStore()
 
@@ -231,8 +233,8 @@ async function load() {
     const { data: resp } = await api.get<Dashboard>('/api/v1/admin/dashboard')
     data.value = resp
   } catch {
-    error.value = 'Failed to load dashboard. Please try again.'
-    ui.showToast('error', 'Dashboard load failed')
+    error.value = t('admin.dashboard.loadError')
+    ui.showToast('error', t('admin.dashboard.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -247,7 +249,8 @@ function navigate(path: string) {
 
 function formatDate(iso: string): string {
   if (!iso) return '—'
-  return new Intl.DateTimeFormat('fr-BE', {
+  const dl = locale.value === 'fr' ? 'fr-FR' : 'en-GB'
+  return new Intl.DateTimeFormat(dl, {
     day: '2-digit', month: 'short', year: 'numeric',
   }).format(new Date(iso))
 }
@@ -301,7 +304,7 @@ const KpiCard = {
           h('span', { class: `text-3xl font-bold tabular-nums ${c.text}` }, String(props.value)),
           active
             ? h('span', { class: `text-xs ${c.text} opacity-60 flex items-center gap-1` }, [
-                'View ',
+                t('admin.dashboard.view') + ' ',
                 h('i', { class: 'pi pi-arrow-right text-[10px]' }),
               ])
             : null,

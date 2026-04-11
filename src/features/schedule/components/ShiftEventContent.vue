@@ -7,7 +7,7 @@
       <i
         v-if="needsCover"
         class="pi pi-user-minus text-[10px] text-rose-400 flex-shrink-0"
-        title="Needs cover — assignment cancelled due to leave"
+        :title="t('schedule.shift.needsCoverTooltip')"
       />
       <i
         v-if="worstSev"
@@ -22,9 +22,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { EventApi } from '@fullcalendar/core'
 import { useRuleViolations } from '../composables/useRuleViolations'
 
+const { t } = useI18n()
 const props = defineProps<{ event: EventApi }>()
 
 const { worstSeverity, getViolations } = useRuleViolations()

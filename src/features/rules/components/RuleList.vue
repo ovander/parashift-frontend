@@ -8,12 +8,13 @@
       </template>
     </Column>
     <Column field="description" :header="t('rules.description')" />
-    <Column :header="t('rules.severity')" style="width: 120px">
+    <!-- hidden on mobile -->
+    <Column v-if="!isMobile" :header="t('rules.severity')" style="width: 120px">
       <template #body="{ data }">
         <SeverityBadge :severity="data.severity" />
       </template>
     </Column>
-    <Column :header="t('rules.enabled')" style="width: 90px">
+    <Column v-if="!isMobile" :header="t('rules.enabled')" style="width: 90px">
       <template #body="{ data }">
         <ToggleSwitch
           :model-value="data.is_enabled"
@@ -49,6 +50,9 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useBreakpoint } from '@/composables/useBreakpoint'
+
+const { isMobile } = useBreakpoint()
 import { useConfirm } from 'primevue/useconfirm'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'

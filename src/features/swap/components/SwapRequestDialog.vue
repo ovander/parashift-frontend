@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model:visible="visible" :header="t('swap.request')" modal :style="{ width: '380px' }">
+  <ResponsiveDialog v-model:visible="visible" :header="t('swap.request')" size="sm">
     <div class="space-y-4">
       <div class="flex flex-col gap-1">
         <label class="text-sm font-medium text-gray-700">Swap with</label>
@@ -26,13 +26,13 @@
         @click="submit"
       />
     </template>
-  </Dialog>
+  </ResponsiveDialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import Dialog from 'primevue/dialog'
+import ResponsiveDialog from '@/components/common/ResponsiveDialog.vue'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import Textarea from 'primevue/textarea'

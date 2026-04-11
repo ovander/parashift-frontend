@@ -1,0 +1,53 @@
+{
+  "title": "Configuration du magasin",
+  "openingHours": {
+    "title": "Horaires d'ouverture",
+    "subtitle": "Quand le magasin est ouvert chaque jour de la semaine.",
+    "saveBtn": "Enregistrer les horaires",
+    "open": "Ouvert",
+    "closed": "Fermé",
+    "saved": "Horaires d'ouverture mis à jour"
+  },
+  "coverage": {
+    "title": "Exigences de couverture",
+    "subtitle": "Combien de personnes par rôle sont nécessaires pour chaque plage horaire.",
+    "addBtn": "Ajouter une exigence",
+    "colDay": "Jour",
+    "colTimeSlot": "Plage horaire",
+    "colMinStaff": "Effectif min.",
+    "colRole": "Rôle",
+    "noRequirements": "Aucune exigence de couverture. Ajoutez la première.",
+    "anyRole": "tout rôle",
+    "dialogAddTitle": "Ajouter une exigence de couverture",
+    "dialogEditTitle": "Modifier l'exigence",
+    "fieldDay": "Jour de la semaine",
+    "fieldFrom": "De",
+    "fieldTo": "À",
+    "fieldMinStaff": "Effectif minimum",
+    "fieldRole": "Rôle requis",
+    "fieldRoleOptional": "(optionnel)",
+    "fieldRoleHint": "Laisser vide pour compter tout employé assigné.",
+    "anyRoleOption": "Tout rôle",
+    "dialogCancel": "Annuler",
+    "dialogSave": "Enregistrer",
+    "dialogAdd": "Ajouter",
+    "added": "Exigence de couverture ajoutée",
+    "updated": "Exigence mise à jour",
+    "deleted": "Exigence supprimée"
+  },
+  "exceptions": {
+    "title": "Jours d'ouverture exceptionnelle",
+    "subtitle": "Dimanches ou jours fériés où le magasin ouvre exceptionnellement. La couverture du personnel sera vérifiée pour ces jours.",
+    "loading": "Chargement…",
+    "none": "Aucune ouverture exceptionnelle planifiée.",
+    "colDate": "Date",
+    "colNote": "Note",
+    "sunday": "Dimanche",
+    "addTitle": "Ajouter un jour d'ouverture exceptionnelle",
+    "addNote": "Note (optionnel)",
+    "addNotePlaceholder": "ex. Inventaire, dimanche de décembre…",
+    "addBtn": "Ajouter",
+    "added": "Exception ajoutée",
+    "deleted": "Exception supprimée"
+  }
+}

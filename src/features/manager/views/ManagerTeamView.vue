@@ -1,13 +1,13 @@
 <template>
   <div class="p-6 space-y-4">
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold text-gray-900">Team</h1>
+      <h1 class="text-xl font-semibold text-gray-900">{{ t('manager.team.pageTitle') }}</h1>
       <div class="flex items-center gap-2">
         <!-- DEV ONLY: Audit trail -->
         <Button
           v-if="isDev"
           icon="pi pi-list-check"
-          label="Audit"
+          :label="t('manager.team.auditButton')"
           size="small"
           severity="secondary"
           outlined
@@ -16,15 +16,15 @@
         />
         <Button
           icon="pi pi-refresh"
-          label="Regenerate schedule"
+          :label="t('manager.team.regenerateButton')"
           size="small"
           severity="warn"
           outlined
           :loading="regenerating"
-          v-tooltip="'Regenerate all shifts from A/B templates (±52 weeks)'"
+          v-tooltip="t('manager.team.regenerateTooltip')"
           @click="confirmRegenerate"
         />
-        <Button label="Add employee" icon="pi pi-user-plus" @click="openNew" />
+        <Button :label="t('manager.team.addEmployeeButton')" icon="pi pi-user-plus" @click="openNew" />
       </div>
     </div>
 
@@ -35,15 +35,15 @@
     >
       <i class="pi pi-exclamation-triangle text-red-500" />
       {{ error }}
-      <Button label="Retry" text size="small" class="ml-auto" @click="load" />
+      <Button :label="t('common.retry')" text size="small" class="ml-auto" @click="load" />
     </div>
 
     <Card>
       <template #header>
         <div class="px-5 pt-4 flex items-center gap-2 text-sm text-gray-500">
           <i class="pi pi-users text-gray-400" />
-          <span class="font-semibold text-gray-700">Your store's employees</span>
-          <span>· {{ total }} employee{{ total !== 1 ? 's' : '' }}</span>
+          <span class="font-semibold text-gray-700">{{ t('manager.team.cardHeader') }}</span>
+          <span>· {{ t('manager.team.employeeCount', total, { n: total }) }}</span>
         </div>
       </template>
       <template #content>
@@ -55,8 +55,8 @@
           paginator
           :rows-per-page-options="[10, 20, 50]"
         >
-          <Column field="name" header="Name" sortable />
-          <Column header="Position / Job role" style="width: 200px">
+          <Column field="name" :header="t('common.name')" sortable />
+          <Column v-if="!isMobile" :header="t('manager.team.positionJobRole')" style="width: 200px">
             <template #body="{ data }">
               <div class="flex items-center gap-1.5">
                 <Tag :value="data.position" :severity="positionSeverity(data.position)" />
@@ -64,33 +64,33 @@
               </div>
             </template>
           </Column>
-          <Column field="start_date" header="Start date" style="width: 110px" />
-          <Column header="Status" style="width: 160px">
+          <Column v-if="!isMobile" field="start_date" :header="t('common.startDate')" style="width: 110px" />
+          <Column :header="t('common.status')" style="width: 160px">
             <template #body="{ data }">
               <span
                 v-if="data.auth_id"
                 class="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200"
               >
-                <i class="pi pi-check-circle text-[10px]" /> Active
+                <i class="pi pi-check-circle text-[10px]" /> {{ t('common.active') }}
               </span>
               <span
                 v-else-if="data.email"
                 class="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200"
               >
-                <i class="pi pi-envelope text-[10px]" /> Invite sent
+                <i class="pi pi-envelope text-[10px]" /> {{ t('manager.team.inviteSent') }}
               </span>
               <button
                 v-else-if="data.claim_token"
                 class="inline-flex items-center gap-1 text-xs text-orange-700 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200 hover:bg-orange-100 transition-colors"
-                title="Click to copy invite link"
+                :title="t('manager.team.copyLinkTooltip')"
                 @click="copyLink(data.claim_token)"
               >
-                <i class="pi pi-link text-[10px]" /> Copy link
+                <i class="pi pi-link text-[10px]" /> {{ t('manager.team.copyLink') }}
               </button>
               <span v-else class="text-xs text-gray-400">—</span>
             </template>
           </Column>
-          <Column field="email" header="Email" style="width: 200px">
+          <Column v-if="isDesktop" field="email" :header="t('common.email')" style="width: 200px">
             <template #body="{ data }">
               <span class="text-xs text-gray-500">{{ data.email || '—' }}</span>
             </template>
@@ -101,14 +101,14 @@
                 <Button
                   icon="pi pi-pencil"
                   text rounded size="small"
-                  v-tooltip.top="'Edit'"
+                  v-tooltip.top="t('common.edit')"
                   @click="openEdit(data)"
                 />
                 <Button
                   icon="pi pi-calendar"
                   text rounded size="small"
                   severity="info"
-                  v-tooltip.top="'A/B Planning'"
+                  v-tooltip.top="t('manager.team.abRule')"
                   @click="openPlanning(data)"
                 />
                 <!-- DEV ONLY: per-employee A/B schedule audit -->
@@ -124,7 +124,7 @@
             </template>
           </Column>
           <template #empty>
-            <span class="text-sm text-gray-400">No employees yet. Add your first team member above.</span>
+            <span class="text-sm text-gray-400">{{ t('manager.team.emptyState') }}</span>
           </template>
         </DataTable>
       </template>
@@ -141,12 +141,11 @@
     />
 
     <!-- Audit trail dialog (DEV only) -->
-    <Dialog
+    <ResponsiveDialog
       v-if="isDev"
       v-model:visible="auditOpen"
-      header="🔍 Team Audit Trail"
-      modal
-      :style="{ width: '640px', maxHeight: '80vh' }"
+      :header="t('manager.team.auditDialogTitle')"
+      size="lg"
       :pt="{ content: { style: 'overflow-y: auto' } }"
     >
       <div class="font-mono text-xs space-y-4 text-gray-800">
@@ -159,7 +158,7 @@
 
         <!-- Breakdown by position -->
         <div>
-          <div class="font-semibold text-gray-700 mb-2 uppercase tracking-wide text-[10px]">By position</div>
+          <div class="font-semibold text-gray-700 mb-2 uppercase tracking-wide text-[10px]">{{ t('manager.team.byPosition') }}</div>
           <div class="flex gap-4">
             <div
               v-for="(count, pos) in teamAuditData.byPosition"
@@ -174,7 +173,7 @@
 
         <!-- Breakdown by job role -->
         <div>
-          <div class="font-semibold text-gray-700 mb-2 uppercase tracking-wide text-[10px]">By job role</div>
+          <div class="font-semibold text-gray-700 mb-2 uppercase tracking-wide text-[10px]">{{ t('manager.team.byJobRole') }}</div>
           <div class="flex flex-wrap gap-2">
             <div
               v-for="(count, role) in teamAuditData.byJobRole"
@@ -190,7 +189,7 @@
         <!-- Employee list -->
         <div>
           <div class="font-semibold text-gray-700 mb-2 uppercase tracking-wide text-[10px]">
-            Employees ({{ teamAuditData.total }})
+            {{ t('manager.team.employees') }} ({{ teamAuditData.total }})
           </div>
           <div class="border border-gray-200 rounded overflow-hidden">
             <div class="grid grid-cols-[180px_90px_160px_100px_100px] gap-2 px-3 py-1.5 bg-gray-50 border-b border-gray-200 text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
@@ -213,23 +212,22 @@
 
       <template #footer>
         <Button label="Copy JSON" icon="pi pi-copy" outlined size="small" @click="copyTeamAuditJson" />
-        <Button label="Close" size="small" @click="auditOpen = false" />
+        <Button :label="t('common.close')" size="small" @click="auditOpen = false" />
       </template>
-    </Dialog>
+    </ResponsiveDialog>
 
     <!-- Per-employee A/B schedule audit dialog (DEV only) -->
-    <Dialog
+    <ResponsiveDialog
       v-if="isDev"
       v-model:visible="empAuditOpen"
       :header="`🔍 A/B Schedule — ${auditEmployee?.name ?? ''}`"
-      modal
-      :style="{ width: '580px', maxHeight: '80vh' }"
+      size="lg"
       :pt="{ content: { style: 'overflow-y: auto' } }"
     >
       <template v-if="auditEmployee">
         <!-- Loading state while templates are fetched -->
         <div v-if="weekTemplateStore.loading" class="flex items-center gap-2 py-4 text-sm text-gray-500">
-          <i class="pi pi-spin pi-spinner" /> Loading templates…
+          <i class="pi pi-spin pi-spinner" /> {{ t('manager.team.loadingTemplates') }}
         </div>
 
         <div v-else class="font-mono text-xs text-gray-800 space-y-4">
@@ -239,7 +237,7 @@
             <div><span class="text-gray-500">Position  :</span> {{ auditEmployee.position }} / {{ auditEmployee.job_role || '—' }}</div>
             <div><span class="text-gray-500">Start date:</span> {{ auditEmployee.start_date || '—' }}</div>
             <div v-if="auditEmployee.start_date">
-              <span class="text-gray-500">A/B rule  :</span>
+              <span class="text-gray-500">{{ t('manager.team.abRule') }}</span>
               {{ empAuditABRule }}
             </div>
             <div><span class="text-gray-500">Generated :</span> {{ new Date().toISOString() }}</div>
@@ -250,14 +248,14 @@
             v-if="empAuditWeekA.length === 0 && empAuditWeekB.length === 0"
             class="text-center py-6 text-gray-400"
           >
-            No schedule templates defined yet.
+            {{ t('manager.team.noTemplates') }}
           </div>
 
           <!-- Week A -->
           <div v-if="empAuditWeekA.length > 0">
             <div class="font-semibold text-amber-700 mb-2 uppercase tracking-wide text-[10px] flex items-center gap-1.5">
               <span class="inline-block w-3 h-3 rounded-sm bg-amber-200 border border-amber-400"></span>
-              WEEK A ({{ empAuditWeekA.length }} shift{{ empAuditWeekA.length !== 1 ? 's' : '' }})
+              {{ t('manager.team.weekA') }} ({{ empAuditWeekA.length }} shift{{ empAuditWeekA.length !== 1 ? 's' : '' }})
             </div>
             <div class="border border-amber-200 rounded overflow-hidden bg-amber-50">
               <div class="grid grid-cols-[110px_80px_80px_1fr] gap-2 px-3 py-1 bg-amber-100 border-b border-amber-200 text-[10px] uppercase tracking-wide text-amber-600 font-semibold">
@@ -271,7 +269,7 @@
                 <span class="font-medium text-amber-800">{{ dowLabel(entry.day_of_week) }}</span>
                 <span class="text-gray-700">{{ entry.start_time }}</span>
                 <span class="text-gray-700">{{ entry.end_time }}</span>
-                <span class="text-gray-500 capitalize">{{ entry.role || 'any role' }}</span>
+                <span class="text-gray-500 capitalize">{{ entry.role || t('manager.team.anyRole') }}</span>
               </div>
             </div>
           </div>
@@ -280,7 +278,7 @@
           <div v-if="empAuditWeekB.length > 0">
             <div class="font-semibold text-blue-700 mb-2 uppercase tracking-wide text-[10px] flex items-center gap-1.5">
               <span class="inline-block w-3 h-3 rounded-sm bg-blue-200 border border-blue-400"></span>
-              WEEK B ({{ empAuditWeekB.length }} shift{{ empAuditWeekB.length !== 1 ? 's' : '' }})
+              {{ t('manager.team.weekB') }} ({{ empAuditWeekB.length }} shift{{ empAuditWeekB.length !== 1 ? 's' : '' }})
             </div>
             <div class="border border-blue-200 rounded overflow-hidden bg-blue-50">
               <div class="grid grid-cols-[110px_80px_80px_1fr] gap-2 px-3 py-1 bg-blue-100 border-b border-blue-200 text-[10px] uppercase tracking-wide text-blue-600 font-semibold">
@@ -294,7 +292,7 @@
                 <span class="font-medium text-blue-800">{{ dowLabel(entry.day_of_week) }}</span>
                 <span class="text-gray-700">{{ entry.start_time }}</span>
                 <span class="text-gray-700">{{ entry.end_time }}</span>
-                <span class="text-gray-500 capitalize">{{ entry.role || 'any role' }}</span>
+                <span class="text-gray-500 capitalize">{{ entry.role || t('manager.team.anyRole') }}</span>
               </div>
             </div>
           </div>
@@ -303,73 +301,73 @@
 
       <template #footer>
         <Button label="Copy text" icon="pi pi-copy" outlined size="small" @click="copyEmpAuditText" />
-        <Button label="Close" size="small" @click="empAuditOpen = false" />
+        <Button :label="t('common.close')" size="small" @click="empAuditOpen = false" />
       </template>
-    </Dialog>
+    </ResponsiveDialog>
 
     <!-- Create / Edit dialog -->
-    <Dialog
+    <ResponsiveDialog
       v-model:visible="dialogVisible"
-      :header="editingEmployee ? 'Edit employee' : 'Add employee'"
-      :style="{ width: '460px' }"
-      modal
+      :header="editingEmployee ? t('manager.team.editEmployee') : t('manager.team.addEmployee')"
+      size="sm"
     >
       <div class="space-y-4 pt-2">
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Full name <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium text-gray-700">{{ t('common.fullName') }} <span class="text-red-500">*</span></label>
           <InputText v-model="form.name" placeholder="e.g. Jean Dupont" autofocus />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Position <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium text-gray-700">{{ t('common.position') }} <span class="text-red-500">*</span></label>
           <Select
             v-model="form.position"
             :options="positionOptions"
             option-label="label"
             option-value="value"
             :loading="optionsStore.loading"
-            placeholder="Select position…"
+            :placeholder="t('manager.team.selectPosition')"
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Job role <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium text-gray-700">{{ t('common.jobRole') }} <span class="text-red-500">*</span></label>
           <Select
             v-model="form.job_role"
             :options="jobRoleOptions"
             option-label="label"
             option-value="value"
             :loading="optionsStore.loading"
-            placeholder="Select a job role…"
+            :placeholder="t('manager.team.selectJobRole')"
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Start date <span class="text-red-500">*</span></label>
-          <DatePicker v-model="form.start_date" date-format="yy-mm-dd" placeholder="YYYY-MM-DD" show-icon />
+          <label class="text-sm font-medium text-gray-700">{{ t('common.startDate') }} <span class="text-red-500">*</span></label>
+          <DatePicker v-model="form.start_date" date-format="yy-mm-dd" :placeholder="t('common.dateFormatPlaceholder')" show-icon />
         </div>
         <div v-if="!editingEmployee" class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Email (sends invite)</label>
+          <label class="text-sm font-medium text-gray-700">{{ t('manager.team.emailInvite') }}</label>
           <InputText v-model="form.email" type="email" placeholder="employee@pharmacy.be" />
-          <p class="text-xs text-gray-400">Leave blank to generate a manual invite link.</p>
+          <p class="text-xs text-gray-400">{{ t('manager.team.emailHint') }}</p>
         </div>
       </div>
       <template #footer>
-        <Button label="Cancel" text @click="dialogVisible = false" />
+        <Button :label="t('common.cancel')" text @click="dialogVisible = false" />
         <Button
-          :label="editingEmployee ? 'Save' : (form.email ? 'Send invite' : 'Create & generate link')"
+          :label="editingEmployee ? t('common.save') : (form.email ? t('manager.team.sendInvite') : t('manager.team.createGenerateLink'))"
           :loading="saving"
           @click="save"
         />
       </template>
-    </Dialog>
+    </ResponsiveDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Button    from 'primevue/button'
 import Card      from 'primevue/card'
 import DataTable from 'primevue/datatable'
 import Column    from 'primevue/column'
-import Dialog    from 'primevue/dialog'
+import ResponsiveDialog from '@/components/common/ResponsiveDialog.vue'
 import InputText from 'primevue/inputtext'
 import Select    from 'primevue/select'
 import DatePicker from 'primevue/datepicker'
@@ -380,6 +378,8 @@ import { useStoreContext } from '@/stores/storeContext'
 import { useOptionsStore } from '@/stores/optionsStore'
 import { useWeekTemplateStore } from '@/features/templates/stores/weekTemplateStore'
 import { useScheduleStore } from '@/features/schedule/stores/scheduleStore'
+import { fmtLocal } from '@/utils/dateUtils'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 import WeekTemplateEditorDrawer from '../components/WeekTemplateEditorDrawer.vue'
 
 interface Employee {
@@ -393,6 +393,8 @@ interface Employee {
   start_date: string
 }
 
+const { t }             = useI18n()
+const { isMobile, isDesktop } = useBreakpoint()
 const ui                = useUiStore()
 const ctx               = useStoreContext()
 const optionsStore      = useOptionsStore()
@@ -479,7 +481,7 @@ function copyEmpAuditText() {
   }
 
   navigator.clipboard.writeText(lines.join('\n'))
-  ui.showToast('success', 'Copied to clipboard')
+  ui.showToast('success', t('manager.team.auditCopied'))
 }
 
 // ── Audit trail (DEV only) ─────────────────────────────────────────────
@@ -558,7 +560,7 @@ async function load() {
     employees.value = data.data ?? []
     total.value     = data.total ?? employees.value.length
   } catch {
-    error.value = 'Failed to load team.'
+    error.value = t('manager.team.loadFailed')
   } finally {
     loading.value = false
   }
@@ -580,7 +582,7 @@ function openEdit(emp: Employee) {
 
 async function save() {
   if (!form.value.name.trim() || !form.value.position || !form.value.job_role) {
-    ui.showToast('warn', 'Name, position and job role are required')
+    ui.showToast('warn', t('manager.team.formInvalid'))
     return
   }
   saving.value = true
@@ -592,10 +594,10 @@ async function save() {
         job_role: form.value.job_role,
         ...(form.value.start_date ? { start_date: (form.value.start_date as Date).toISOString() } : {}),
       })
-      ui.showToast('success', 'Employee updated')
+      ui.showToast('success', t('manager.team.updated'))
     } else {
       if (!form.value.start_date) {
-        ui.showToast('warn', 'Start date is required')
+        ui.showToast('warn', t('manager.team.startRequired'))
         saving.value = false
         return
       }
@@ -607,19 +609,19 @@ async function save() {
         email: form.value.email,
       })
       if (form.value.email) {
-        ui.showToast('success', `Invite sent to ${form.value.email}`)
+        ui.showToast('success', t('manager.team.inviteSent', { email: form.value.email }))
       } else if (resp.data?.claim_token) {
         const link = `${window.location.origin}/claim/${resp.data.claim_token}`
         await navigator.clipboard.writeText(link)
-        ui.showToast('success', 'Invite link copied to clipboard')
+        ui.showToast('success', t('manager.team.linkCopied'))
       } else {
-        ui.showToast('success', 'Employee created')
+        ui.showToast('success', t('manager.team.created'))
       }
     }
     dialogVisible.value = false
     await load()
   } catch {
-    ui.showToast('error', 'Failed to save employee')
+    ui.showToast('error', t('manager.team.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -628,7 +630,7 @@ async function save() {
 async function copyLink(token: string) {
   const link = `${window.location.origin}/claim/${token}`
   await navigator.clipboard.writeText(link)
-  ui.showToast('success', 'Invite link copied to clipboard')
+  ui.showToast('success', t('manager.team.linkCopied'))
 }
 
 function positionSeverity(position: string) {
@@ -648,17 +650,13 @@ function mondayOfWeek(d: Date): Date {
 }
 
 async function confirmRegenerate() {
-  const ok = window.confirm(
-    'Regenerate ALL shifts from A/B templates?\n\n' +
-    'This will replace every TEMPLATE-sourced shift for ±52 weeks (from today).\n' +
-    'Manually-created shifts are not affected.',
-  )
+  const ok = window.confirm(t('manager.team.regenerateConfirmation'))
   if (!ok) return
 
   const thisMon = mondayOfWeek(new Date())
   const from    = new Date(thisMon); from.setDate(from.getDate() - 52 * 7)
   const to      = new Date(thisMon); to.setDate(to.getDate() + 52 * 7 - 1)
-  const fmt     = (d: Date) => d.toISOString().split('T')[0]
+  const fmt     = (d: Date) => fmtLocal(d)
 
   regenerating.value = true
   try {

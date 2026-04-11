@@ -1,0 +1,23 @@
+{
+  "planner": "Planner",
+  "myWeek": "My Week",
+  "rules": "Rules",
+  "coverage": "Coverage",
+  "templates": "Templates",
+  "leave": "Leave",
+  "swaps": "Swaps",
+  "admin": "Administration",
+  "config": "Configuration",
+  "team": "Team",
+  "today": "Today",
+  "schedule": "Schedule",
+  "configuration": "Configuration",
+  "operations": "Operations",
+  "organisation": "Organisation",
+  "mySchedule": "My Schedule",
+  "dashboard": "Dashboard",
+  "auditLogs": "Audit Logs",
+  "stores": "Stores",
+  "managers": "Managers",
+  "employees": "Employees"
+}

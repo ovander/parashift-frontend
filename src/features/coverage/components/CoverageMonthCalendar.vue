@@ -37,18 +37,19 @@
 
     <!-- Legend -->
     <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-gray-500">
-      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-green-400 inline-block"/> OK</span>
-      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-400 inline-block"/> Understaffed</span>
-      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-400 inline-block"/> Missing role</span>
-      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"/> Overstaffed</span>
-      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-gray-200 inline-block"/> No requirement</span>
-      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-200 inline-block"/> Jour férié</span>
+      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-green-400 inline-block"/> {{ t('coverage.ok') }}</span>
+      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-400 inline-block"/> {{ t('coverage.understaffed') }}</span>
+      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-400 inline-block"/> {{ t('coverage.missingRole') }}</span>
+      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"/> {{ t('coverage.overstaffed') }}</span>
+      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-gray-200 inline-block"/> {{ t('coverage.noRequirement') }}</span>
+      <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-200 inline-block"/> {{ t('coverage.publicHoliday') }}</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { CoverageReport } from '@/types'
 
 const props = defineProps<{
@@ -60,7 +61,17 @@ const props = defineProps<{
 
 defineEmits<{ 'day-click': [iso: string] }>()
 
-const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+const { t, locale } = useI18n()
+
+// Day-of-week headers derived from the active locale (Mon-first ISO order)
+const DAY_HEADERS = computed(() => {
+  const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-GB'
+  return Array.from({ length: 7 }, (_, i) => {
+    // 2024-01-01 was a Monday — offset i gives Mon…Sun
+    const d = new Date(2024, 0, 1 + i)
+    return d.toLocaleDateString(dateLocale, { weekday: 'short' })
+  })
+})
 
 // ── Calendar grid ─────────────────────────────────────────────────────────────
 

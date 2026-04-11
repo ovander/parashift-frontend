@@ -232,8 +232,9 @@ test.describe('Mobile Today View (TodayView)', () => {
     )
 
     await page.goto(`/stores/${STORE_ID}/today`)
-    // Component renders "Jour de repos" when no shifts and no leave
-    await expect(page.getByText(/Jour de repos/i)).toBeVisible()
+    // Component renders "Day off" when no shifts and no leave.
+    // Scoped to the today-panel to avoid matching the WeekStrip day cards.
+    await expect(page.getByTestId('today-panel').getByText(/Day off/i)).toBeVisible()
   })
 
   test('swap alert banner shown when pending swaps exist', async ({ page }) => {

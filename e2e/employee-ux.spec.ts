@@ -205,10 +205,10 @@ test.describe('TodayView — Today tab', () => {
       '/leave-requests': { data: [] },
     })
     await newPage.goto(`/stores/${STORE_ID}/today`)
-    // Empty state is now French: official holiday name + "Jour férié",
-    // or "Jour de repos" when it is a regular day off with no shifts.
+    // Empty state: "Day off" for a regular day, "Public holiday" for holidays.
+    // Scoped to the today-panel to avoid matching the WeekStrip day cards.
     await expect(
-      newPage.getByText(/jour de repos|jour férié/i),
+      newPage.getByTestId('today-panel').getByText(/day off|public holiday/i),
     ).toBeVisible()
   })
 })

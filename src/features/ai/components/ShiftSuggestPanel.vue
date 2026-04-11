@@ -6,7 +6,7 @@
         :options="shiftOptions"
         option-label="label"
         option-value="value"
-        placeholder="Select a shift…"
+        :placeholder="t('ai.selectShift')"
         fluid
       />
       <Button
@@ -20,7 +20,7 @@
 
     <!-- Idle -->
     <div v-if="!aiStore.loadingSuggest && aiStore.suggestions.length === 0 && !aiStore.errorSuggest" class="text-center py-8 text-gray-400 text-sm">
-      Select a shift and click "Get suggestions"
+      {{ t('ai.selectShiftIdle', { btn: t('ai.getSuggestions') }) }}
     </div>
 
     <!-- Loading skeletons -->

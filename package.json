@@ -12,9 +12,12 @@
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
-    "lint": "vue-tsc --noEmit"
+    "test:e2e": "playwright test",
+    "lint": "vue-tsc --noEmit",
+    "lint:i18n": "eslint src --ext .vue,.ts --max-warnings 0"
   },
   "dependencies": {
+    "@sentry/vue": "^9.0.0",
     "@fullcalendar/core": "^6.1.17",
     "@fullcalendar/interaction": "^6.1.17",
     "@fullcalendar/resource-timegrid": "^6.1.17",

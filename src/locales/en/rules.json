@@ -1,0 +1,22 @@
+{
+  "title": "Scheduling Rules",
+  "new": "New Rule",
+  "type": "Type",
+  "severity": "Severity",
+  "description": "Description",
+  "enabled": "Enabled",
+  "blocking": "Blocking",
+  "warning": "Warning",
+  "info": "Info",
+  "maxHours": "Max hours",
+  "minRest": "Min rest",
+  "coverage": "Coverage",
+  "roleMatch": "Role match",
+  "violation": {
+    "generic": "Rule violation",
+    "roleMatch": "{name} has role \"{role}\" but shift requires \"{required}\"",
+    "noOverlap": "{name} is already assigned on {date}",
+    "maxHours": "{name} would exceed {max}h weekly limit ({hours}h currently)",
+    "minRest": "{name} has only {gap}h rest (minimum {min}h required)"
+  }
+}

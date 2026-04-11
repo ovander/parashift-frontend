@@ -6,7 +6,7 @@
     <div class="flex items-center gap-3">
       <Tag :severity="tagSeverity" :value="plan?.state ?? 'DRAFT'" />
       <span class="text-gray-500 text-xs">
-        Week of {{ weekStart }}
+        {{ t('schedule.lifecycle.weekOf') }} {{ weekStart }}
       </span>
       <span v-if="plan?.override_log?.length" class="text-orange-600 text-xs flex items-center gap-1">
         <i class="pi pi-pencil text-xs" />
@@ -21,21 +21,21 @@
         severity="secondary"
         text
         icon="pi pi-history"
-        label="History"
+        :label="t('common.history')"
         @click="$emit('open-history')"
       />
       <Button
         v-if="canPublish"
         size="small"
         icon="pi pi-send"
-        label="Publish Week"
+        :label="t('schedule.lifecycle.publishWeek')"
         :loading="publishing"
         @click="$emit('publish')"
       />
       <Tag
         v-else-if="isLive"
         severity="success"
-        value="LIVE"
+        :value="t('schedule.lifecycle.live')"
         icon="pi pi-circle-fill"
       />
     </div>
@@ -44,10 +44,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 import { usePlanStore } from '@/stores/planStore'
 import { useStoreContext } from '@/stores/storeContext'
+
+const { t } = useI18n()
 
 defineEmits<{
   publish: []

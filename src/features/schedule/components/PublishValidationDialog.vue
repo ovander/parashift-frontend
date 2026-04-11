@@ -1,18 +1,17 @@
 <template>
-  <Dialog
+  <ResponsiveDialog
     v-model:visible="visible"
-    modal
-    header="Publish Week Schedule"
-    :style="{ width: '420px' }"
+    :header="t('schedule.publish.dialogTitle')"
+    size="sm"
   >
     <div class="space-y-4">
       <p class="text-sm text-gray-600">
-        Publishing will notify all employees of their shifts for
-        <strong>week of {{ ctx.weekStart }}</strong>.
+        {{ t('schedule.publish.description') }}
+        <strong>{{ t('schedule.publish.weekOf') }} {{ ctx.weekStart }}</strong>.
       </p>
 
       <div v-if="warnings.length" class="bg-yellow-50 border border-yellow-200 rounded p-3 space-y-1">
-        <p class="text-xs font-semibold text-yellow-800 mb-1">Warnings</p>
+        <p class="text-xs font-semibold text-yellow-800 mb-1">{{ t('schedule.publish.warnings') }}</p>
         <p v-for="w in warnings" :key="w" class="text-xs text-yellow-700 flex items-start gap-1">
           <i class="pi pi-exclamation-circle mt-0.5" />
           {{ w }}
@@ -21,15 +20,15 @@
 
       <div class="bg-gray-50 rounded p-3 text-xs text-gray-600 space-y-1">
         <div class="flex justify-between">
-          <span>Total shifts</span>
+          <span>{{ t('schedule.publish.totalShifts') }}</span>
           <span class="font-medium">{{ shiftCount }}</span>
         </div>
         <div class="flex justify-between">
-          <span>Assigned</span>
+          <span>{{ t('schedule.publish.assigned') }}</span>
           <span class="font-medium">{{ assignedCount }}</span>
         </div>
         <div class="flex justify-between">
-          <span>Unassigned</span>
+          <span>{{ t('schedule.publish.unassigned') }}</span>
           <span :class="unassignedCount > 0 ? 'text-orange-600 font-semibold' : 'font-medium'">
             {{ unassignedCount }}
           </span>
@@ -38,26 +37,28 @@
     </div>
 
     <template #footer>
-      <Button label="Cancel" severity="secondary" text @click="visible = false" />
+      <Button :label="t('common.cancel')" severity="secondary" text @click="visible = false" />
       <Button
-        label="Publish"
+        :label="t('schedule.publish.publish')"
         icon="pi pi-send"
         :loading="planStore.publishing"
         @click="doPublish"
       />
     </template>
-  </Dialog>
+  </ResponsiveDialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import Dialog from 'primevue/dialog'
+import { useI18n } from 'vue-i18n'
+import ResponsiveDialog from '@/components/common/ResponsiveDialog.vue'
 import Button from 'primevue/button'
 import { usePlanStore } from '@/stores/planStore'
 import { useScheduleStore } from '@/features/schedule/stores/scheduleStore'
 import { useStoreContext } from '@/stores/storeContext'
 import { useToast } from 'primevue/usetoast'
 
+const { t } = useI18n()
 const visible = defineModel<boolean>('visible', { default: false })
 
 const planStore = usePlanStore()
@@ -72,7 +73,7 @@ const unassignedCount = computed(() => shiftCount.value - assignedCount.value)
 const warnings = computed(() => {
   const w: string[] = []
   if (unassignedCount.value > 0)
-    w.push(`${unassignedCount.value} shift(s) have no assigned employee.`)
+    w.push(`${unassignedCount.value} ${t('schedule.publish.unassignedWarning')}`)
   return w
 })
 

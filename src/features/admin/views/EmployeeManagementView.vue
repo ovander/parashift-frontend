@@ -1,9 +1,9 @@
 <template>
   <div class="p-6 space-y-4">
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold text-gray-900">Employees</h1>
+      <h1 class="text-xl font-semibold text-gray-900">{{ t('admin.empMgmt.title') }}</h1>
       <Button
-        label="Add Employee"
+        :label="t('admin.empMgmt.addEmployee')"
         icon="pi pi-user-plus"
         :disabled="!selectedStoreId"
         @click="openNew"
@@ -12,20 +12,20 @@
 
     <!-- Store selector -->
     <div class="flex items-center gap-3">
-      <label class="text-sm font-medium text-gray-600 whitespace-nowrap">Store <span class="text-red-500">*</span></label>
+      <label class="text-sm font-medium text-gray-600 whitespace-nowrap">{{ t('common.store') }} <span class="text-red-500">*</span></label>
       <Select
         v-model="selectedStoreId"
         :options="storeOptions"
         option-label="label"
         option-value="value"
-        placeholder="Select a store to manage its employees…"
+        :placeholder="t('admin.empMgmt.selectStorePlaceholder')"
         class="w-80"
         :loading="storesLoading"
         @change="onStoreChange"
       />
       <span v-if="!selectedStoreId" class="text-xs text-amber-600 flex items-center gap-1">
         <i class="pi pi-info-circle" />
-        Employees must belong to a store
+        {{ t('admin.empMgmt.storeBelongsHint') }}
       </span>
     </div>
 
@@ -34,7 +34,7 @@
         <div class="px-5 pt-4 flex items-center gap-2">
           <i class="pi pi-building text-gray-400 text-sm" />
           <span class="text-sm font-semibold text-gray-700">{{ selectedStoreName }}</span>
-          <span class="text-xs text-gray-400">· {{ employees.length }} employee{{ employees.length !== 1 ? 's' : '' }}</span>
+          <span class="text-xs text-gray-400">· {{ t('admin.empMgmt.employeeCount', employees.length, { count: employees.length }) }}</span>
         </div>
       </template>
       <template #content>
@@ -46,8 +46,8 @@
           paginator
           :rows-per-page-options="[10, 20, 50]"
         >
-          <Column field="name" header="Name" sortable />
-          <Column header="Position / Job role" style="width: 200px">
+          <Column field="name" :header="t('common.name')" sortable />
+          <Column v-if="!isMobile" :header="t('admin.employees.positionJobRole')" style="width: 200px">
             <template #body="{ data }">
               <div class="flex items-center gap-1.5">
                 <Tag :value="data.position" :severity="positionSeverity(data.position)" />
@@ -55,12 +55,12 @@
               </div>
             </template>
           </Column>
-          <Column field="start_date" header="Start date" style="width: 120px" />
-          <Column header="Status / Contact" style="width: 180px">
+          <Column v-if="isDesktop" field="start_date" :header="t('common.startDate')" style="width: 120px" />
+          <Column :header="t('admin.empMgmt.statusContact')" style="width: 180px">
             <template #body="{ data }">
               <span v-if="!data.auth_id || data.claim_token" class="inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                 <i class="pi pi-clock text-[10px]" />
-                Pending invite
+                {{ t('admin.employees.pendingInvite') }}
               </span>
               <span v-else-if="data.email" class="text-xs text-gray-500 truncate max-w-[160px] block" :title="data.email">
                 <i class="pi pi-envelope text-gray-300 mr-1" />{{ data.email }}
@@ -77,16 +77,16 @@
                   text
                   rounded
                   size="small"
-                  v-tooltip="'Copy invite link'"
+                  v-tooltip="t('admin.empMgmt.copyInviteLink')"
                   @click="copyInviteLink(data)"
                 />
-                <Button icon="pi pi-pencil" text rounded size="small" v-tooltip="'Edit'" @click="openEdit(data)" />
+                <Button icon="pi pi-pencil" text rounded size="small" v-tooltip="t('common.edit')" @click="openEdit(data)" />
               </div>
             </template>
           </Column>
           <template #empty>
             <div class="py-10 text-center text-sm text-gray-400">
-              {{ selectedStoreId ? 'No employees in this store.' : 'Select a store to see its employees.' }}
+              {{ selectedStoreId ? t('admin.empMgmt.noEmployeesInStore') : t('admin.empMgmt.selectStoreFirst') }}
             </div>
           </template>
         </DataTable>
@@ -94,17 +94,16 @@
     </Card>
 
     <!-- Create / Edit dialog -->
-    <Dialog
+    <ResponsiveDialog
       v-model:visible="dialogVisible"
-      :header="editingEmployee ? `Edit — ${editingEmployee.name}` : `Add employee to ${selectedStoreName}`"
-      modal
-      :style="{ width: '440px' }"
+      :header="editingEmployee ? t('admin.empMgmt.editTitle', { name: editingEmployee.name }) : t('admin.empMgmt.addTitle', { store: selectedStoreName })"
+      size="sm"
       @hide="resetForm"
     >
       <div class="space-y-4 pt-1">
         <!-- Name -->
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Full name <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium text-gray-700">{{ t('common.fullName') }} <span class="text-red-500">*</span></label>
           <InputText
             v-model="form.name"
             fluid
@@ -113,12 +112,12 @@
             :invalid="errors.name"
             @input="errors.name = false"
           />
-          <span v-if="errors.name" class="text-xs text-red-500">Name is required</span>
+          <span v-if="errors.name" class="text-xs text-red-500">{{ t('admin.empMgmt.errorName') }}</span>
         </div>
 
         <!-- Position -->
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Position <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium text-gray-700">{{ t('common.position') }} <span class="text-red-500">*</span></label>
           <Select
             v-model="form.position"
             :options="positionOptions"
@@ -129,12 +128,12 @@
             :invalid="errors.position"
             @change="errors.position = false"
           />
-          <span v-if="errors.position" class="text-xs text-red-500">Position is required</span>
+          <span v-if="errors.position" class="text-xs text-red-500">{{ t('admin.empMgmt.errorPosition') }}</span>
         </div>
 
         <!-- Job role -->
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Job role <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium text-gray-700">{{ t('common.jobRole') }} <span class="text-red-500">*</span></label>
           <Select
             v-model="form.job_role"
             :options="jobRoleOptions"
@@ -146,14 +145,14 @@
             :invalid="errors.job_role"
             @change="errors.job_role = false"
           />
-          <span v-if="errors.job_role" class="text-xs text-red-500">Job role is required</span>
+          <span v-if="errors.job_role" class="text-xs text-red-500">{{ t('admin.empMgmt.errorJobRole') }}</span>
         </div>
 
         <!-- Email (create only) — triggers automatic Socrate invite -->
         <div v-if="!editingEmployee" class="flex flex-col gap-1">
           <label class="text-sm font-medium text-gray-700">
-            Email address
-            <span class="text-xs text-gray-400 font-normal ml-1">(recommended)</span>
+            {{ t('admin.empMgmt.emailAddress') }}
+            <span class="text-xs text-gray-400 font-normal ml-1">{{ t('admin.empMgmt.recommended') }}</span>
           </label>
           <InputText
             v-model="form.email"
@@ -163,18 +162,15 @@
             :invalid="errors.email"
             @input="errors.email = false"
           />
-          <p class="text-xs text-gray-400">
-            ParaShift will create their Socrate account and send an invite email automatically.
-            Leave empty to get a manual invite link instead.
-          </p>
-          <span v-if="errors.email" class="text-xs text-red-500">Enter a valid email address</span>
+          <p class="text-xs text-gray-400">{{ t('admin.empMgmt.emailHint') }}</p>
+          <span v-if="errors.email" class="text-xs text-red-500">{{ t('admin.empMgmt.errorEmail') }}</span>
         </div>
 
         <!-- Start date -->
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium text-gray-700">
-            Start date <span class="text-red-500">*</span>
-            <span class="text-xs text-gray-400 font-normal ml-1">(used for A/B week calculation)</span>
+            {{ t('common.startDate') }} <span class="text-red-500">*</span>
+            <span class="text-xs text-gray-400 font-normal ml-1">{{ t('admin.empMgmt.startDateHint') }}</span>
           </label>
           <InputText
             v-model="form.startDate"
@@ -183,42 +179,47 @@
             :invalid="errors.startDate"
             @input="errors.startDate = false"
           />
-          <span v-if="errors.startDate" class="text-xs text-red-500">{{ errors.startDateMsg || 'Start date is required' }}</span>
+          <span v-if="errors.startDate" class="text-xs text-red-500">{{ errors.startDateMsg || t('admin.empMgmt.errorStartDate') }}</span>
         </div>
       </div>
 
       <template #footer>
-        <Button label="Cancel" text @click="dialogVisible = false" />
+        <Button :label="t('common.cancel')" text @click="dialogVisible = false" />
         <Button
-          :label="editingEmployee ? 'Save' : (form.email ? 'Create & invite' : 'Create & generate link')"
+          :label="editingEmployee ? t('common.save') : (form.email ? t('admin.empMgmt.createInvite') : t('admin.empMgmt.createLink'))"
           :icon="!editingEmployee ? (form.email ? 'pi pi-envelope' : 'pi pi-link') : undefined"
           :loading="saving"
           @click="save"
         />
       </template>
-    </Dialog>
+    </ResponsiveDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Button    from 'primevue/button'
 import Card      from 'primevue/card'
 import DataTable from 'primevue/datatable'
 import Column    from 'primevue/column'
 import Tag       from 'primevue/tag'
 import Select    from 'primevue/select'
-import Dialog    from 'primevue/dialog'
+import ResponsiveDialog from '@/components/common/ResponsiveDialog.vue'
 import InputText from 'primevue/inputtext'
 import api from '@/composables/useApi'
 import { useUiStore } from '@/stores/ui'
 import { useOptionsStore } from '@/stores/optionsStore'
+import { useBreakpoint } from '@/composables/useBreakpoint'
+
+const { isMobile, isDesktop } = useBreakpoint()
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Store    { id: string; name: string }
 interface Employee { id: string; name: string; position: string; job_role: string; auth_id: string; email?: string; start_date: string; claim_token?: string }
 
 // ── State ──────────────────────────────────────────────────────────────────────
+const { t }        = useI18n()
 const ui           = useUiStore()
 const optionsStore = useOptionsStore()
 
@@ -254,7 +255,7 @@ async function loadStores() {
       await loadEmployees(selectedStoreId.value)
     }
   } catch {
-    ui.showToast('error', 'Failed to load stores')
+    ui.showToast('error', t('admin.employees.loadStoresFailed'))
   } finally {
     storesLoading.value = false
   }
@@ -267,7 +268,7 @@ async function loadEmployees(storeId: string) {
     const { data } = await api.get<{ data: Employee[] }>(`/api/v1/stores/${storeId}/employees?per_page=200`)
     employees.value = data.data ?? []
   } catch {
-    ui.showToast('error', 'Failed to load employees')
+    ui.showToast('error', t('admin.employees.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -321,7 +322,7 @@ function validate(): boolean {
     ok = false
   } else if (!/^\d{4}-\d{2}-\d{2}$/.test(form.startDate.trim()) || isNaN(Date.parse(form.startDate))) {
     errors.startDate    = true
-    errors.startDateMsg = 'Use YYYY-MM-DD format (e.g. 2024-01-15)'
+    errors.startDateMsg = t('admin.empMgmt.errorStartDateFormat')
     ok = false
   }
 
@@ -346,7 +347,7 @@ async function save() {
           start_date: new Date(form.startDate).toISOString(),
         },
       )
-      ui.showToast('success', 'Employee updated')
+      ui.showToast('success', t('admin.employees.updated'))
     } else {
       const payload: Record<string, string> = {
         name:       form.name.trim(),
@@ -363,20 +364,20 @@ async function save() {
 
       if (data.email) {
         // Socrate invite sent — no manual link needed.
-        ui.showToast('success', `Invite sent to ${data.email}`)
+        ui.showToast('success', t('admin.employees.inviteSent', { email: data.email }))
       } else if (data.claim_token) {
         // Fallback: auto-copy the manual invite link to clipboard.
         const url = buildInviteURL(data.claim_token)
         await copyToClipboard(url)
-        ui.showToast('success', 'Employee created — invite link copied to clipboard!')
+        ui.showToast('success', t('admin.employees.createdWithLink'))
       } else {
-        ui.showToast('success', 'Employee created')
+        ui.showToast('success', t('admin.employees.created'))
       }
     }
     dialogVisible.value = false
     await loadEmployees(selectedStoreId.value)
   } catch (err: any) {
-    const msg = err?.response?.data?.error?.message ?? 'Failed to save employee'
+    const msg = err?.response?.data?.error?.message ?? t('errors.loadFailed')
     ui.showToast('error', msg)
   } finally {
     saving.value = false
@@ -392,7 +393,7 @@ async function copyInviteLink(emp: Employee) {
   if (!emp.claim_token) return
   const url = buildInviteURL(emp.claim_token)
   await copyToClipboard(url)
-  ui.showToast('success', 'Invite link copied to clipboard')
+  ui.showToast('success', t('admin.employees.linkCopied'))
 }
 
 async function copyToClipboard(text: string) {

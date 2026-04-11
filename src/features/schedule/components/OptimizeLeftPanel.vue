@@ -12,7 +12,7 @@
             : 'border-transparent text-gray-500 hover:text-gray-700'"
           @click="activeTab = tab.id"
         >
-          <i :class="tab.icon" class="mr-1" />{{ tab.label }}
+          <i :class="tab.icon" class="mr-1" />{{ t(tab.labelKey) }}
         </button>
       </div>
     </div>
@@ -20,7 +20,7 @@
     <!-- Suggestions tab -->
     <div v-if="activeTab === 'suggestions'" class="flex-1 overflow-y-auto">
       <div class="p-3 border-b bg-gray-50">
-        <p class="text-xs text-gray-500 mb-2">AI assist level</p>
+        <p class="text-xs text-gray-500 mb-2">{{ t('schedule.optimize.aiAssistLevel') }}</p>
         <div class="space-y-1">
           <label
             v-for="tier in aiTiers"
@@ -44,11 +44,11 @@
 
       <div v-if="aiSuggestions.length === 0" class="p-6 text-center text-gray-400">
         <i class="pi pi-sparkles text-2xl mb-2 block" />
-        <p class="text-sm">No suggestions yet</p>
+        <p class="text-sm">{{ t('schedule.optimize.noSuggestions') }}</p>
         <Button
           size="small"
           class="mt-3"
-          label="Generate"
+          :label="t('schedule.optimize.generate')"
           icon="pi pi-refresh"
           @click="generateSuggestions"
           :loading="generating"
@@ -72,7 +72,7 @@
                 icon="pi pi-check"
                 text
                 severity="success"
-                v-tooltip="'Apply'"
+                :v-tooltip="t('common.apply')"
                 @click="applySuggestion(s.id)"
               />
               <Button
@@ -80,7 +80,7 @@
                 icon="pi pi-times"
                 text
                 severity="secondary"
-                v-tooltip="'Dismiss'"
+                :v-tooltip="t('schedule.optimize.dismiss')"
                 @click="dismissSuggestion(s.id)"
               />
             </div>
@@ -110,25 +110,27 @@
       </div>
 
       <div class="text-xs text-gray-400 text-center pt-2">
-        Week of {{ ctx.weekStart }}
+        {{ t('schedule.optimize.weekOf') }} {{ ctx.weekStart }}
       </div>
     </div>
 
     <!-- Scenarios tab -->
     <div v-if="activeTab === 'scenarios'" class="flex-1 overflow-y-auto p-4">
-      <p class="text-xs text-gray-500 mb-3">Compare planning models side-by-side to pick the best schedule.</p>
-      <p class="text-xs text-gray-400 text-center pt-4">Scenario comparison coming soon.</p>
+      <p class="text-xs text-gray-500 mb-3">{{ t('schedule.optimize.scenarioDescription') }}</p>
+      <p class="text-xs text-gray-400 text-center pt-4">{{ t('schedule.optimize.scenarioComingSoon') }}</p>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import { useApi } from '@/composables/useApi'
 import { useStoreContext } from '@/stores/storeContext'
 import type { AISuggestion } from '@/types'
 
+const { t } = useI18n()
 const ctx = useStoreContext()
 const api = useApi()
 
@@ -138,22 +140,22 @@ const aiSuggestions = ref<AISuggestion[]>([])
 const generating = ref(false)
 
 const tabs = [
-  { id: 'suggestions' as const, label: 'AI',        icon: 'pi pi-sparkles' },
-  { id: 'insights'    as const, label: 'Insights',  icon: 'pi pi-chart-line' },
-  { id: 'scenarios'   as const, label: 'Scenarios', icon: 'pi pi-copy' },
+  { id: 'suggestions' as const, labelKey: 'schedule.optimize.aiTab',        icon: 'pi pi-sparkles' },
+  { id: 'insights'    as const, labelKey: 'schedule.optimize.insightsTab',  icon: 'pi pi-chart-line' },
+  { id: 'scenarios'   as const, labelKey: 'schedule.optimize.scenariosTab', icon: 'pi pi-copy' },
 ]
 
 const aiTiers = [
-  { value: 'suggest'  as const, label: 'Suggest',        description: 'AI shows recommendations; you apply them one by one.' },
-  { value: 'assisted' as const, label: 'Assisted Apply', description: 'Preview full AI schedule before committing.' },
-  { value: 'auto'     as const, label: 'Auto (opt-in)',  description: 'AI fills all open slots automatically.' },
+  { value: 'suggest'  as const, label: t('schedule.optimize.suggestTier'),        description: t('schedule.optimize.suggestDescription') },
+  { value: 'assisted' as const, label: t('schedule.optimize.assistedTier'), description: t('schedule.optimize.assistedDescription') },
+  { value: 'auto'     as const, label: t('schedule.optimize.autoTier'),  description: t('schedule.optimize.autoDescription') },
 ]
 
 const metrics = computed(() => [
-  { label: 'Coverage Rate',  value: '—',   pct: 0,  color: 'text-green-600', barColor: 'bg-green-400' },
-  { label: 'Overtime Hours', value: '—',   pct: 0,  color: 'text-orange-600', barColor: 'bg-orange-400' },
-  { label: 'Violations',     value: '—',   pct: 0,  color: 'text-red-600', barColor: 'bg-red-400' },
-  { label: 'Adjustments',    value: '—',   pct: 0,  color: 'text-blue-600', barColor: 'bg-blue-400' },
+  { label: t('schedule.optimize.coverageRate'),  value: '—',   pct: 0,  color: 'text-green-600', barColor: 'bg-green-400' },
+  { label: t('schedule.optimize.overtimeHours'), value: '—',   pct: 0,  color: 'text-orange-600', barColor: 'bg-orange-400' },
+  { label: t('schedule.optimize.violations'),     value: '—',   pct: 0,  color: 'text-red-600', barColor: 'bg-red-400' },
+  { label: t('schedule.optimize.adjustments'),    value: '—',   pct: 0,  color: 'text-blue-600', barColor: 'bg-blue-400' },
 ])
 
 async function generateSuggestions() {

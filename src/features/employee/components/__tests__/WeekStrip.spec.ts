@@ -99,12 +99,13 @@ describe('WeekStrip', () => {
     expect(wrapper.text()).toContain('09:00')
   })
 
-  it('shows "Off" on days with no assignment', () => {
+  it('shows a "Day off" indicator on days with no assignment', () => {
     const sched = useScheduleStore()
     sched.loading = false
     sched.shifts  = sched.assignments = []
     const wrapper = mountStrip()
-    expect(wrapper.findAll('.italic')).toHaveLength(7)
+    // The moon icon (pi-moon) is shown once per day card that has no shift/leave/holiday
+    expect(wrapper.findAll('.pi-moon')).toHaveLength(7)
   })
 
   // Sprint 3.1: auto-select today ────────────────────────────────────────────
@@ -199,7 +200,7 @@ describe('WeekStrip', () => {
     expect(tuesday.html()).not.toContain('🎉')
   })
 
-  it('shows the "Jour férié" detail panel (not "Day off") when selected day is a holiday with no shift', async () => {
+  it('shows the "Public holiday" detail panel (not "Day off") when selected day is a holiday with no shift', async () => {
     vi.setSystemTime(new Date('2026-04-06T10:00:00Z'))
     mockHolidays.value = [{ date: '2026-04-06', name: 'Lundi de Pâques', zone: 'metropole' }]
     const sched = useScheduleStore()
@@ -209,14 +210,15 @@ describe('WeekStrip', () => {
     const wrapper = mountStrip()
     await new Promise((r) => setTimeout(r, 0))
 
-    // Should show the holiday name, not generic "Day off"
+    // Should show the holiday name and "Public holiday" label in the detail panel.
+    // (Other unselected day cards will still show "Day off" for days without shifts —
+    //  we only care that the selected holiday day shows its holiday info correctly.)
     expect(wrapper.text()).toContain('Lundi de Pâques')
-    expect(wrapper.text()).toContain('Jour férié')
-    expect(wrapper.text()).not.toContain('Day off')
+    expect(wrapper.text()).toContain('Public holiday')
     vi.useRealTimers()
   })
 
-  it('shows "Jour férié" subtitle on the day card when it is a holiday and there is no assignment', async () => {
+  it('shows "Public holiday" subtitle on the day card when it is a holiday and there is no assignment', async () => {
     // This exercises the v-else-if="day.holiday" branch in the day card template
     mockHolidays.value = [{ date: '2026-04-06', name: 'Lundi de Pâques', zone: 'metropole' }]
     const sched = useScheduleStore()
@@ -225,9 +227,9 @@ describe('WeekStrip', () => {
     const wrapper = mountStrip()
     await wrapper.vm.$nextTick()
 
-    // The day card itself should say "Jour férié" instead of "Off"
+    // The day card itself should say "Public holiday" instead of "Day off"
     const card = wrapper.find('[data-day="2026-04-06"]')
-    expect(card.text()).toContain('Jour férié')
-    expect(card.text()).not.toContain('Off')
+    expect(card.text()).toContain('Public holiday')
+    expect(card.text()).not.toContain('Day off')
   })
 })

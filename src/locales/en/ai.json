@@ -1,0 +1,14 @@
+{
+  "suggest": "AI Suggestions",
+  "selectShift": "Select a shift…",
+  "selectShiftIdle": "Select a shift and click \"{btn}\"",
+  "optimize": "Optimize",
+  "insights": "Insights",
+  "getSuggestions": "Get suggestions",
+  "applying": "Applying...",
+  "confidence": "Confidence",
+  "reason": "Reason",
+  "applyAll": "Apply all",
+  "noInsights": "No insights available",
+  "dismiss": "Dismiss"
+}

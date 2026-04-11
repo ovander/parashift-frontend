@@ -1,5 +1,5 @@
 <template>
-  <Drawer v-model:visible="visible" position="right" :style="{ width: '420px' }">
+  <AppDrawer v-model:visible="visible" position="right" size="md">
     <template #header>
       <span class="font-semibold">{{ isEdit ? 'Edit Rule' : t('rules.new') }}</span>
     </template>
@@ -68,13 +68,13 @@
 
       <KSaveBanner :dirty="rulesStore.dirty as any" />
     </form>
-  </Drawer>
+  </AppDrawer>
 </template>
 
 <script setup lang="ts">
 import { reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import Drawer from 'primevue/drawer'
+import AppDrawer from '@/components/common/AppDrawer.vue'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'

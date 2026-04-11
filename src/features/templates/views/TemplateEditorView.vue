@@ -10,10 +10,10 @@
       <div v-for="scheme in (['A', 'B'] as const)" :key="scheme" class="space-y-3">
         <div class="flex items-center justify-between">
           <h2 class="font-semibold text-gray-800 flex items-center gap-2">
-            <Tag :value="`Schedule ${scheme}`" :severity="scheme === 'A' ? 'info' : 'warn'" />
+            <Tag :value="t('manager.template.scheduleLabel', { scheme })" :severity="scheme === 'A' ? 'info' : 'warn'" />
           </h2>
           <Button
-            :label="`Publish ${scheme}`"
+            :label="t('manager.template.publishBtn', { scheme })"
             size="small"
             icon="pi pi-send"
             :loading="templateStore.publishing"
@@ -24,8 +24,8 @@
         <!-- Template slots list -->
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div v-if="getSlots(scheme).length === 0" class="text-center py-8 text-sm text-gray-400">
-            No shifts defined for Schedule {{ scheme }}.
-            <button class="text-brand-600 underline ml-1" @click="openAddSlot(scheme)">Add first shift</button>
+            {{ t('manager.template.noShifts', { scheme }) }}
+            <button class="text-brand-600 underline ml-1" @click="openAddSlot(scheme)">{{ t('manager.template.addFirstShift') }}</button>
           </div>
           <div v-else>
             <div
@@ -44,38 +44,38 @@
           </div>
         </div>
 
-        <Button :label="`Add shift to ${scheme}`" icon="pi pi-plus" size="small" outlined fluid
+        <Button :label="t('manager.template.addShiftTo', { scheme })" icon="pi pi-plus" size="small" outlined fluid
           @click="openAddSlot(scheme)" />
       </div>
     </div>
 
     <!-- Add slot dialog -->
-    <Dialog v-model:visible="addSlotOpen" header="Add Shift Slot" modal :style="{ width: '360px' }">
+    <ResponsiveDialog v-model:visible="addSlotOpen" :header="t('manager.template.addSlotTitle')" size="sm">
       <div class="space-y-3">
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Day of week</label>
+          <label class="text-sm font-medium text-gray-700">{{ t('manager.template.dayOfWeek') }}</label>
           <Select v-model="newSlot.day_of_week" :options="dayOptions" option-label="label" option-value="value" :loading="optionsStore.loading" fluid />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">Start</label>
+            <label class="text-sm font-medium text-gray-700">{{ t('manager.template.startTime') }}</label>
             <InputText v-model="newSlot.start_time" placeholder="08:00" fluid />
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">End</label>
+            <label class="text-sm font-medium text-gray-700">{{ t('manager.template.endTime') }}</label>
             <InputText v-model="newSlot.end_time" placeholder="16:00" fluid />
           </div>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Required role</label>
+          <label class="text-sm font-medium text-gray-700">{{ t('manager.template.requiredRole') }}</label>
           <InputText v-model="newSlot.required_role" placeholder="e.g. NURSE" fluid />
         </div>
       </div>
       <template #footer>
-        <Button label="Cancel" outlined @click="addSlotOpen = false" />
-        <Button label="Add" :loading="templateStore.dirty.isSaving as any" @click="addSlot" />
+        <Button :label="t('common.cancel')" outlined @click="addSlotOpen = false" />
+        <Button :label="t('common.add')" :loading="templateStore.dirty.isSaving as any" @click="addSlot" />
       </template>
-    </Dialog>
+    </ResponsiveDialog>
 
     <ConfirmDialog />
   </div>
@@ -87,7 +87,7 @@ import { useI18n } from 'vue-i18n'
 import { useConfirm } from 'primevue/useconfirm'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
-import Dialog from 'primevue/dialog'
+import ResponsiveDialog from '@/components/common/ResponsiveDialog.vue'
 import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'
 import ConfirmDialog from 'primevue/confirmdialog'
@@ -124,11 +124,11 @@ async function addSlot() {
 
 function confirmPublish(scheme: 'A' | 'B') {
   confirm.require({
-    message: `Publish Schedule ${scheme}? This will generate shifts for the next 4 weeks.`,
-    header: `Publish Schedule ${scheme}`,
+    message: t('manager.template.publishConfirmMsg', { scheme }),
+    header:  t('manager.template.publishConfirmHeader', { scheme }),
     icon: 'pi pi-send',
-    acceptProps: { label: 'Publish', icon: 'pi pi-send' },
-    rejectProps: { label: 'Cancel', outlined: true },
+    acceptProps: { label: t('common.publish'), icon: 'pi pi-send' },
+    rejectProps: { label: t('common.cancel'), outlined: true },
     accept: () => templateStore.publishTemplate(storeId, scheme),
   })
 }

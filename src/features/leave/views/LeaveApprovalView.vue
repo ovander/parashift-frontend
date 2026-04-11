@@ -1,30 +1,42 @@
 <template>
   <div class="p-6 space-y-4 overflow-y-auto h-full">
-    <h1 class="text-xl font-semibold text-gray-900">Leave Approval</h1>
+    <h1 class="text-xl font-semibold text-gray-900">{{ t('leave.approval') }}</h1>
     <Card>
       <template #content>
-        <DataTable :value="leaveStore.pendingLeave" :loading="leaveStore.loading">
-          <Column header="Employee">
+        <DataTable :value="leaveStore.leaves" :loading="leaveStore.loading">
+          <Column :header="t('leave.colEmployee')">
             <template #body="{ data }">{{ employeeName(data.employee_id) }}</template>
           </Column>
-          <Column header="Type" style="width:110px">
+          <Column :header="t('leave.colType')" style="width:110px">
             <template #body="{ data }">
-              <span class="capitalize">{{ data.type }}</span>
+              <span>{{ t(`leave.type.${data.type}`, data.type) }}</span>
             </template>
           </Column>
-          <Column field="start_date" header="Start" style="width:120px" />
-          <Column field="end_date"   header="End"   style="width:120px" />
-          <Column field="reason"     header="Reason" />
-          <Column header="Actions" style="width:130px">
+          <!-- hidden on mobile -->
+          <Column v-if="!isMobile" field="start_date" :header="t('leave.colStart')" style="width:120px" />
+          <Column v-if="!isMobile" field="end_date"   :header="t('leave.colEnd')"   style="width:120px" />
+          <!-- desktop only -->
+          <Column v-if="isDesktop" field="reason" :header="t('leave.colReason')" />
+          <!-- Status column -->
+          <Column :header="t('leave.colStatus')" style="width:110px">
             <template #body="{ data }">
-              <div class="flex gap-1">
+              <Tag
+                :value="t(`leave.${data.status}`, data.status)"
+                :severity="data.status === 'approved' ? 'success' : data.status === 'rejected' ? 'danger' : 'warn'"
+                class="capitalize"
+              />
+            </template>
+          </Column>
+          <Column :header="t('leave.colActions')" style="width:100px">
+            <template #body="{ data }">
+              <div v-if="data.status === 'pending'" class="flex gap-1">
                 <!-- Approve: opens impact dialog first -->
                 <Button
                   size="small"
                   icon="pi pi-check"
                   severity="success"
                   outlined
-                  v-tooltip.top="'Preview impact & approve'"
+                  v-tooltip.top="t('leave.tooltipApprove')"
                   @click="openImpactDialog(data)"
                 />
                 <Button
@@ -32,14 +44,14 @@
                   icon="pi pi-times"
                   severity="danger"
                   outlined
-                  v-tooltip.top="'Reject'"
+                  v-tooltip.top="t('leave.tooltipReject')"
                   @click="leaveStore.rejectLeave(ctx.storeId, data.id)"
                 />
               </div>
             </template>
           </Column>
           <template #empty>
-            <div class="text-center py-8 text-gray-400">No pending leave requests.</div>
+            <div class="text-center py-8 text-gray-400">{{ t('leave.noRequests') }}</div>
           </template>
         </DataTable>
       </template>
@@ -62,15 +74,21 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 import Button    from 'primevue/button'
 import Card      from 'primevue/card'
 import DataTable from 'primevue/datatable'
 import Column    from 'primevue/column'
+import Tag       from 'primevue/tag'
 import { useLeaveStore }    from '../stores/leaveStore'
 import { useEmployeeStore } from '@/features/employees/stores/employeeStore'
 import { useStoreContext }  from '@/stores/storeContext'
 import LeaveImpactDialog    from '../components/LeaveImpactDialog.vue'
 import type { LeaveRequest, LeaveImpact } from '@/types'
+
+const { t } = useI18n()
+const { isMobile, isDesktop } = useBreakpoint()
 
 const leaveStore    = useLeaveStore()
 const employeeStore = useEmployeeStore()
@@ -105,7 +123,7 @@ async function openImpactDialog(leave: LeaveRequest) {
   try {
     impact.value = await leaveStore.fetchLeaveImpact(ctx.storeId, leave.id)
   } catch (err: any) {
-    impactError.value = err?.response?.data?.message ?? 'Failed to load impact preview.'
+    impactError.value = err?.response?.data?.message ?? t('leave.impactLoadFailed')
   } finally {
     impactLoading.value = false
   }

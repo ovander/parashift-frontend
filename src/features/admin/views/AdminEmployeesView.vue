@@ -1,7 +1,7 @@
 <template>
   <div class="p-6 space-y-4">
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold text-gray-900">Employees</h1>
+      <h1 class="text-xl font-semibold text-gray-900">{{ t('admin.employees.title') }}</h1>
     </div>
 
     <!-- Filters bar -->
@@ -12,9 +12,9 @@
         :options="jobRoleOptions"
         option-label="label"
         option-value="value"
-        placeholder="All job roles"
+        :placeholder="t('admin.employees.allJobRoles')"
         show-clear
-        class="w-44"
+        class="w-full sm:w-auto sm:min-w-[140px]"
         @change="load"
       />
       <!-- Status filter -->
@@ -23,9 +23,9 @@
         :options="statusOptions"
         option-label="label"
         option-value="value"
-        placeholder="All statuses"
+        :placeholder="t('admin.employees.allStatuses')"
         show-clear
-        class="w-44"
+        class="w-full sm:w-auto sm:min-w-[140px]"
         @change="load"
       />
       <!-- Store filter -->
@@ -34,9 +34,9 @@
         :options="storeOptions"
         option-label="label"
         option-value="value"
-        placeholder="All stores"
+        :placeholder="t('admin.employees.allStores')"
         show-clear
-        class="w-48"
+        class="w-full sm:w-auto sm:min-w-[160px]"
         :loading="storesLoading"
         @change="load"
       />
@@ -46,13 +46,13 @@
         :options="integrityOptions"
         option-label="label"
         option-value="value"
-        placeholder="Data issues"
+        :placeholder="t('admin.employees.dataIssues')"
         show-clear
-        class="w-44"
+        class="w-full sm:w-auto sm:min-w-[140px]"
         @change="load"
       />
       <Button
-        label="Reset"
+        :label="t('common.reset')"
         text
         icon="pi pi-filter-slash"
         size="small"
@@ -67,7 +67,7 @@
     >
       <i class="pi pi-exclamation-triangle text-red-500" />
       {{ error }}
-      <Button label="Retry" text size="small" class="ml-auto" @click="load" />
+      <Button :label="t('common.retry')" text size="small" class="ml-auto" @click="load" />
     </div>
 
     <Card>
@@ -83,8 +83,9 @@
           :total-records="total"
           @page="onPage"
         >
-          <Column field="name" header="Name" />
-          <Column header="Position / Job role" style="width: 210px">
+          <Column field="name" :header="t('common.name')" />
+          <!-- hidden on mobile -->
+          <Column v-if="!isMobile" :header="t('admin.employees.positionJobRole')" style="width: 210px">
             <template #body="{ data }">
               <div class="flex items-center gap-1.5">
                 <Tag :value="data.position || '—'" :severity="positionSeverity(data.position)" />
@@ -92,42 +93,45 @@
               </div>
             </template>
           </Column>
-          <Column field="store_name" header="Store" style="width: 180px">
+          <!-- hidden on mobile -->
+          <Column v-if="!isMobile" field="store_name" :header="t('common.store')" style="width: 180px">
             <template #body="{ data }">
               <span class="text-sm text-gray-600">{{ data.store_name || '—' }}</span>
             </template>
           </Column>
-          <Column header="Status" style="width: 150px">
+          <Column :header="t('common.status')" style="width: 150px">
             <template #body="{ data }">
               <span
                 v-if="data.auth_id"
                 class="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200"
               >
-                <i class="pi pi-check-circle text-[10px]" /> Active
+                <i class="pi pi-check-circle text-[10px]" /> {{ t('admin.employees.statusActive') }}
               </span>
               <span
                 v-else-if="data.email"
                 class="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200"
               >
-                <i class="pi pi-envelope text-[10px]" /> Pending invite
+                <i class="pi pi-envelope text-[10px]" /> {{ t('admin.employees.pendingInvite') }}
               </span>
               <span
                 v-else-if="data.claim_token"
                 class="inline-flex items-center gap-1 text-xs text-orange-700 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200"
               >
-                <i class="pi pi-link text-[10px]" /> Unclaimed link
+                <i class="pi pi-link text-[10px]" /> {{ t('admin.employees.unclaimedLink') }}
               </span>
               <span v-else class="text-xs text-gray-400">—</span>
             </template>
           </Column>
-          <Column field="email" header="Email" style="width: 200px">
+          <!-- desktop only -->
+          <Column v-if="isDesktop" field="email" :header="t('common.email')" style="width: 200px">
             <template #body="{ data }">
               <span class="text-xs text-gray-500">{{ data.email || '—' }}</span>
             </template>
           </Column>
-          <Column field="start_date" header="Start date" style="width: 110px" />
+          <!-- desktop only -->
+          <Column v-if="isDesktop" field="start_date" :header="t('common.startDate')" style="width: 110px" />
           <template #empty>
-            <span class="text-sm text-gray-400">No employees found.</span>
+            <span class="text-sm text-gray-400">{{ t('admin.employees.empty') }}</span>
           </template>
         </DataTable>
       </template>
@@ -137,6 +141,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import Button    from 'primevue/button'
 import Card      from 'primevue/card'
@@ -146,6 +151,10 @@ import Select    from 'primevue/select'
 import Tag       from 'primevue/tag'
 import api from '@/composables/useApi'
 import { useOptionsStore } from '@/stores/optionsStore'
+import { useBreakpoint } from '@/composables/useBreakpoint'
+
+const { isMobile, isDesktop } = useBreakpoint()
+const { t } = useI18n()
 
 interface Employee {
   id: string
@@ -226,7 +235,7 @@ async function load() {
     employees.value = data.data ?? []
     total.value     = data.total ?? 0
   } catch {
-    error.value = 'Failed to load employees.'
+    error.value = t('admin.employees.listFailed')
   } finally {
     loading.value = false
   }

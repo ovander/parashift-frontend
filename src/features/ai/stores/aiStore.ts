@@ -5,6 +5,7 @@ import { useScheduleStore } from '@/features/schedule/stores/scheduleStore'
 import { useCoverageStore } from '@/features/coverage/stores/coverageStore'
 import { useEmployeeStore } from '@/features/employees/stores/employeeStore'
 import { extractApiError } from '@/utils/logger'
+import { fmtLocal } from '@/utils/dateUtils'
 import type { ScheduleSuggestion, OptimizeSuggestion, AIInsight } from '@/types'
 
 export const useAIStore = defineStore('ai', () => {
@@ -41,7 +42,7 @@ export const useAIStore = defineStore('ai', () => {
       // Pre-warm data
       await Promise.allSettled([
         useEmployeeStore().fetchEmployees(storeId),
-        useScheduleStore().fetchWeek(storeId, useScheduleStore().shifts[0]?.date ?? new Date().toISOString().split('T')[0], true),
+        useScheduleStore().fetchWeek(storeId, useScheduleStore().shifts[0]?.date ?? fmtLocal(new Date()), true),
       ])
       const api = useAIApi()
       const res = await api.get<{ data: ScheduleSuggestion[] }>(

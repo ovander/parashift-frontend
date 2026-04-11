@@ -9,9 +9,11 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { DirtyStateHandle } from '@/composables/useDirtyState'
 
 const props = defineProps<{ dirty: DirtyStateHandle; loading?: boolean }>()
+const { t } = useI18n()
 
 const showClean = ref(false)
 let cleanTimer: ReturnType<typeof setTimeout> | null = null
@@ -54,10 +56,10 @@ const iconClass = computed(() => {
 
 const message = computed(() => {
   switch (props.dirty.state.value) {
-    case 'dirty':   return 'Unsaved changes'
-    case 'saving':  return 'Saving…'
-    case 'error':   return props.dirty.errorMessage.value || 'Not saved — please retry.'
-    default:        return 'Saved'
+    case 'dirty':   return t('common.unsavedChanges')
+    case 'saving':  return t('common.saving')
+    case 'error':   return props.dirty.errorMessage.value || t('common.saveError')
+    default:        return t('common.saved')
   }
 })
 </script>

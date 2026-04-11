@@ -1,0 +1,20 @@
+{
+  "title": "Shift Swaps",
+  "request": "Request Swap",
+  "incoming": "Incoming Requests",
+  "accept": "Accept",
+  "decline": "Decline",
+  "count": "0 swaps | 1 swap | {n} swaps",
+  "requestSent": "Swap request sent",
+  "accepted": "Swap accepted",
+  "declined": "Swap declined",
+  "requests": "Requests",
+  "approval": "Swap Requests",
+  "colRequester": "Requester",
+  "colTarget": "Target",
+  "colNote": "Note",
+  "colStatus": "Status",
+  "noSwaps": "No swap requests.",
+  "pendingCount": "no pending swap requests | {n} pending swap request | {n} pending swap requests",
+  "review": "Review"
+}

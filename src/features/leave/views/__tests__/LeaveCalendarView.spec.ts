@@ -14,10 +14,6 @@ import type { LeaveRequest } from '@/types'
 
 // ── Module mocks ──────────────────────────────────────────────────────────────
 
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({ t: (k: string) => k }),
-}))
-
 vi.mock('@/stores/storeContext', () => ({
   useStoreContext: () => ({ storeId: 'store-test' }),
 }))

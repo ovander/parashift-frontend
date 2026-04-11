@@ -3,10 +3,12 @@ import type { CalendarOptions, EventInput, EventDropArg, EventMountArg, DatesSet
 import type { ResourceLabelMountArg } from '@fullcalendar/resource'
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid'
 import interactionPlugin, { type EventReceiveArg } from '@fullcalendar/interaction'
+import frLocale from '@fullcalendar/core/locales/fr'
 import type { Employee, ShiftInstance, Assignment, StoreException, LeaveRequest } from '@/types'
 import type { PublicHoliday } from './usePublicHolidays'
 import { useRuleViolations } from './useRuleViolations'
 import { toISOMonday } from '@/utils/dateUtils'
+import { useI18n } from 'vue-i18n'
 
 interface UsePlannerCalendarOptions {
   storeId:     Ref<string>
@@ -31,6 +33,7 @@ function isoWeekNumber(d: Date): number {
 }
 
 export function usePlannerCalendar(opts: UsePlannerCalendarOptions) {
+  const { locale } = useI18n()
   const { getViolations, worstSeverity } = useRuleViolations()
 
   // Persist the active view (day / week) across remounts caused by navigation.
@@ -329,8 +332,9 @@ export function usePlannerCalendar(opts: UsePlannerCalendarOptions) {
   // resetOptions() call. Using setOption() inside datesSet caused a feedback loop
   // (setOption → re-render → datesSet → setOption → …) that left the title blank.
   function titleFormat(args: { date: { marker: Date }; start: { marker: Date }; end?: { marker: Date } | null }): string {
-    const anchor  = (args.start ?? args.date).marker
-    const weekNum = isoWeekNumber(anchor)
+    const anchor    = (args.start ?? args.date).marker
+    const weekNum   = isoWeekNumber(anchor)
+    const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-GB'
     // FC passes end = start+1day even for a single-day view; only treat as a range
     // when the span is strictly longer than one day (week view spans 7 days).
     const isRange = args.end != null && (args.end.marker.getTime() - anchor.getTime()) > 86_400_000
@@ -338,11 +342,11 @@ export function usePlannerCalendar(opts: UsePlannerCalendarOptions) {
     if (isRange) {
       // end is exclusive — subtract 1 ms to get the last visible day.
       const last     = new Date(args.end!.marker.getTime() - 1)
-      const startStr = anchor.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-      const endStr   = last.toLocaleDateString(undefined,   { month: 'short', day: 'numeric', year: 'numeric' })
+      const startStr = anchor.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })
+      const endStr   = last.toLocaleDateString(dateLocale,   { month: 'short', day: 'numeric', year: 'numeric' })
       return `W${weekNum} · ${startStr} – ${endStr}`
     }
-    const dayStr = anchor.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+    const dayStr = anchor.toLocaleDateString(dateLocale, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
     return `W${weekNum} · ${dayStr}`
   }
 
@@ -368,6 +372,7 @@ export function usePlannerCalendar(opts: UsePlannerCalendarOptions) {
   const calendarOptions = computed((): CalendarOptions => ({
     schedulerLicenseKey: import.meta.env.VITE_FULLCALENDAR_LICENSE_KEY ?? 'CC-Attribution-NonCommercial-NoDerivatives',
     plugins:          [resourceTimeGridPlugin, interactionPlugin],
+    locale:           locale.value === 'fr' ? frLocale : undefined,
     initialView:      activeView.value,
     initialDate:      opts.weekStart.value,
     firstDay:         1,

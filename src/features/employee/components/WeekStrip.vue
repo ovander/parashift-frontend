@@ -45,7 +45,7 @@
             <!-- Approved leave badge -->
             <div v-if="day.leave" class="mt-1.5 flex items-center gap-1">
               <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-100 border border-emerald-300 rounded-full px-1.5 py-0.5 leading-tight capitalize truncate max-w-full">
-                🌴 {{ day.leave }}
+                🌴 {{ t(`leave.type.${day.leave}`, day.leave) }}
               </span>
             </div>
 
@@ -65,32 +65,33 @@
             <!-- Shift/leave conflict indicator: leave approved but shifts still assigned -->
             <div v-else-if="day.shift && day.leave" class="mt-1.5 flex items-center gap-1">
               <span class="text-[10px] font-semibold text-orange-700 bg-orange-100 border border-orange-300 rounded-full px-1.5 py-0.5 leading-tight">
-                ⚠ conflict
+                ⚠ {{ t('schedule.conflict') }}
               </span>
             </div>
-            <div v-else-if="day.holiday" class="mt-1 text-xs text-amber-600 font-medium">Jour férié</div>
+            <div v-else-if="day.holiday" class="mt-1 text-xs text-amber-600 font-medium">{{ t('schedule.publicHoliday') }}</div>
             <div v-else-if="!day.leave" class="mt-2 flex items-center gap-1 text-xs text-gray-400">
               <i class="pi pi-moon text-[10px]" />
-              <span>Repos</span>
+              <span>{{ t('schedule.dayOff') }}</span>
             </div>
           </div>
         </template>
     </div>
 
     <!-- ── Selected day detail ─────────────────────────────────────────────── -->
+    <div ref="detailPanelRef"></div>
 
     <!-- Approved leave banner — shown whenever the day is on leave, regardless of shifts -->
     <div v-if="!schedStore.loading && selectedDayLeave" class="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-center">
       <i class="pi pi-sun text-2xl block mb-1.5 text-emerald-500" />
-      <div class="font-semibold text-emerald-700 capitalize">{{ selectedDayLeave }}</div>
-      <div class="text-xs text-emerald-500 mt-0.5">Approved leave</div>
+      <div class="font-semibold text-emerald-700">{{ t(`leave.type.${selectedDayLeave}`, selectedDayLeave ?? '') }}</div>
+      <div class="text-xs text-emerald-500 mt-0.5">{{ t('schedule.approvedLeave') }}</div>
     </div>
 
     <!-- Shift conflict warning + cards: only shown when shifts exist AND leave is also active -->
     <template v-if="selectedDayAssignments.length && selectedDayLeave">
       <div class="mt-2 rounded-lg bg-orange-50 border border-orange-200 px-3 py-2 flex items-center gap-2 text-xs text-orange-800">
         <i class="pi pi-exclamation-triangle text-orange-500 flex-shrink-0" />
-        You are still scheduled during this leave — contact your manager to resolve the conflict.
+        {{ t('schedule.leaveConflictWarning') }}
       </div>
       <div class="mt-2 space-y-3 opacity-60">
         <ShiftCard
@@ -117,20 +118,22 @@
       <template v-if="selectedDayHoliday">
         <i class="pi pi-star text-2xl block mb-2 text-amber-500" />
         <div class="font-semibold text-amber-700">{{ selectedDayHoliday }}</div>
-        <div class="text-xs text-amber-500 mt-1">Jour férié</div>
+        <div class="text-xs text-amber-500 mt-1">{{ t('schedule.publicHoliday') }}</div>
       </template>
       <template v-else>
         <i class="pi pi-sun text-2xl block mb-2 text-gray-400" />
-        <span class="text-gray-400">Day off</span>
+        <span class="text-gray-400">{{ t('schedule.dayOff') }}</span>
       </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Skeleton from 'primevue/skeleton'
 import { useStoreContext } from '@/stores/storeContext'
+import { fmtLocal } from '@/utils/dateUtils'
 import { useScheduleStore } from '@/features/schedule/stores/scheduleStore'
 import { useLeaveStore } from '@/features/leave/stores/leaveStore'
 import { useAuthStore } from '@/stores/auth'
@@ -138,6 +141,9 @@ import { usePublicHolidays } from '@/features/schedule/composables/usePublicHoli
 import ShiftCard from './ShiftCard.vue'
 
 const props = defineProps<{ storeId: string }>()
+
+const { t, locale } = useI18n()
+const dateLocale = computed(() => locale.value === 'fr' ? 'fr-FR' : 'en-GB')
 
 const ctx        = useStoreContext()
 const schedStore = useScheduleStore()
@@ -174,14 +180,21 @@ const myLeaveMap = computed(() => {
 
 // ── Sprint 3.1: auto-select today if it falls in the current week ──────────
 function todayOrMonday(): string {
-  const today = new Date().toISOString().split('T')[0]
+  const today = fmtLocal(new Date())
   return ctx.weekStart <= today && today <= ctx.weekEnd ? today : ctx.weekStart
 }
 
-const selectedDay = ref<string>(todayOrMonday())
+const selectedDay     = ref<string>(todayOrMonday())
+const detailPanelRef  = ref<HTMLElement | null>(null)
 
 // Re-anchor when the user navigates to a different week
 watch(() => ctx.weekStart, () => { selectedDay.value = todayOrMonday() })
+
+// Sprint 3.2: scroll the detail panel into view whenever the user selects a new day
+watch(selectedDay, async () => {
+  await nextTick()
+  detailPanelRef.value?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+})
 
 // ── Timezone-safe ISO date ─────────────────────────────────────────────────
 // toISOString() converts to UTC — in CEST (UTC+2) midnight local becomes
@@ -209,7 +222,7 @@ const days = computed(() =>
     const shift      = firstAssn ? schedStore.shifts.find((s) => s.id === firstAssn.shift_id) : null
     return {
       iso,
-      label:       d.toLocaleDateString(undefined, { weekday: 'short' }),
+      label:       d.toLocaleDateString(dateLocale.value, { weekday: 'short' }),
       dayNum:      d.getDate(),
       shift,
       assignment:  firstAssn,

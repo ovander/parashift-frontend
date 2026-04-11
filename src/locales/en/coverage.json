@@ -1,0 +1,22 @@
+{
+  "ok": "OK",
+  "understaffed": "Understaffed",
+  "missingRole": "Missing role",
+  "overstaffed": "Overstaffed",
+  "noRequirement": "No requirement",
+  "publicHoliday": "Public holiday",
+  "gapAlert": "{count} coverage gap detected this week. | {count} coverage gaps detected this week.",
+  "viewCoverage": "View coverage →",
+  "totalSlots": "Total slots:",
+  "gaps": "Gaps:",
+  "roleNotSatisfied": "Role requirement not satisfied",
+  "roleNotSatisfiedDesc": "Your coverage requirements need role {roles} but none of your employees carry that role. Employees currently have roles: {employeeRoles}.",
+  "roleNotSatisfiedFix": "Fix: go to Store Config → Coverage Requirements and either clear the Required role field or change it to {role}.",
+  "storeConfig": "Store Config → Coverage Requirements",
+  "noData": "No coverage data available.",
+  "noRequirementTooltip": "no requirement",
+  "cellTooltip": "{date} {hour}:00 — {assigned}/{required}",
+  "dashboard": "Coverage Dashboard",
+  "viewWeek": "Week",
+  "viewMonth": "Month"
+}

@@ -134,7 +134,7 @@
 
             <!-- Leave -->
             <div v-else-if="day.onLeave" class="text-[9px] text-orange-600 bg-orange-50 border border-orange-200 rounded px-1 py-0.5">
-              🌴 Congé
+              🌴 {{ t('schedule.leave') }}
             </div>
           </div>
 
@@ -168,7 +168,7 @@ import { useStoreContext } from '@/stores/storeContext'
 import type { ShiftInstance, Assignment } from '@/types'
 import { icsDateTime, icsEscape, icsFold, duration, shiftColor, isoWeek } from '../utils/icsUtils'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const auth = useAuthStore()
 const ctx  = useStoreContext()
 const api  = useApi()
@@ -191,7 +191,7 @@ const monthOptions = computed(() => {
   for (let delta = -5; delta <= 6; delta++) {
     const d     = new Date(today.getFullYear(), today.getMonth() + delta, 1)
     const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    const label = d.toLocaleDateString('fr-BE', { month: 'long', year: 'numeric' })
+    const label = d.toLocaleDateString(locale.value === 'fr' ? 'fr-BE' : 'en-GB', { month: 'long', year: 'numeric' })
     opts.push({ value, label })
   }
   return opts
@@ -211,13 +211,15 @@ const parsedMonth = computed(() => {
   return { year: y, month: m }
 })
 
+const dateLocale = computed(() => locale.value === 'fr' ? 'fr-BE' : 'en-GB')
+
 const monthTitle = computed(() => {
   const { year, month } = parsedMonth.value
-  return new Date(year, month - 1, 1).toLocaleDateString('fr-BE', { month: 'long', year: 'numeric' })
+  return new Date(year, month - 1, 1).toLocaleDateString(dateLocale.value, { month: 'long', year: 'numeric' })
 })
 
 const todayLabel = computed(() =>
-  new Date().toLocaleDateString('fr-BE', { day: 'numeric', month: 'long', year: 'numeric' })
+  new Date().toLocaleDateString(dateLocale.value, { day: 'numeric', month: 'long', year: 'numeric' })
 )
 
 const leadingBlanks = computed(() => {
@@ -237,7 +239,12 @@ const trailingBlanks = computed(() => {
   return rem === 0 ? 0 : 7 - rem
 })
 
-const weekDayLabels = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+// Mon 6 Jan 2025 is a known Monday; derive the 7 day labels from it
+const weekDayLabels = computed(() =>
+  Array.from({ length: 7 }, (_, i) =>
+    new Date(2025, 0, 6 + i).toLocaleDateString(dateLocale.value, { weekday: 'long' })
+  )
+)
 
 // ── Data fetching ────────────────────────────────────────────────────────────
 
@@ -357,18 +364,18 @@ const totalMinutes = computed(() =>
 const totalHoursLabel = computed(() => {
   const h = Math.floor(totalMinutes.value / 60)
   const m = totalMinutes.value % 60
-  return `${h}h${m > 0 ? `${m}` : ''} ce mois`
+  return `${h}h${m > 0 ? `${m}` : ''} ${t('schedule.thisMonth')}`
 })
 
 const totalShiftsLabel = computed(() => {
   const n = calendarDays.value.reduce((acc, d) => acc + d.shifts.length, 0)
-  return `${n} poste${n !== 1 ? 's' : ''}`
+  return `${n} ${t('schedule.shifts', n)}`
 })
 
 // ── ICS calendar export ───────────────────────────────────────────────────────
 
 function exportIcs() {
-  const name  = auth.user?.name ?? 'Employé'
+  const name  = auth.user?.name ?? t('schedule.icsEmployee')
   const role  = auth.user?.job_role ?? auth.user?.position ?? ''
   const title = monthTitle.value
 
@@ -386,10 +393,10 @@ function exportIcs() {
 
       const summary = icsEscape(`${shift.start_time}–${shift.end_time} (${dur})`)
       const desc    = icsEscape(
-        `Poste : ${shift.start_time}–${shift.end_time} (${dur})\\n` +
-        `Employé : ${name}\\n` +
-        (role ? `Rôle : ${role}\\n` : '') +
-        (day.isHoliday && day.holidayName ? `Jour férié : ${day.holidayName}` : '')
+        `${t('schedule.icsShift')} : ${shift.start_time}–${shift.end_time} (${dur})\\n` +
+        `${t('schedule.icsEmployee')} : ${name}\\n` +
+        (role ? `${t('schedule.icsRole')} : ${role}\\n` : '') +
+        (day.isHoliday && day.holidayName ? `${t('schedule.icsHoliday')} : ${day.holidayName}` : '')
       )
 
       events.push([
@@ -404,7 +411,7 @@ function exportIcs() {
         'BEGIN:VALARM',
         'TRIGGER:-PT30M',
         'ACTION:DISPLAY',
-        icsFold(`DESCRIPTION:Rappel : ${summary}`),
+        icsFold(`DESCRIPTION:${t('schedule.icsReminder')} : ${summary}`),
         'END:VALARM',
         'END:VEVENT',
       ].join('\r\n'))
@@ -412,7 +419,7 @@ function exportIcs() {
   }
 
   if (!events.length) {
-    alert('Aucun poste à exporter pour ce mois.')
+    alert(t('schedule.noShiftsToExport'))
     return
   }
 
@@ -437,14 +444,14 @@ function exportIcs() {
     'END:VTIMEZONE',
   ].join('\r\n')
 
-  const calName = icsEscape(`Planning ${title} — ${name}`)
+  const calName = icsEscape(`${t('schedule.scheduleTitle')} ${title} — ${name}`)
 
   const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    icsFold('PRODID:-//ParaShift//Planning//FR'),
+    icsFold(`PRODID:-//ParaShift//${t('schedule.scheduleTitle')}//EN`),
     icsFold(`X-WR-CALNAME:${calName}`),
-    'X-WR-CALDESC:Planning exporté depuis ParaShift',
+    `X-WR-CALDESC:${t('schedule.icsCalDesc')}`,
     'X-WR-TIMEZONE:Europe/Paris',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
@@ -458,7 +465,7 @@ function exportIcs() {
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
   a.href     = url
-  a.download = `Planning-${selectedMonth.value}-${name.replace(/\s+/g, '-')}.ics`
+  a.download = `${t('schedule.scheduleTitle')}-${selectedMonth.value}-${name.replace(/\s+/g, '-')}.ics`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -519,7 +526,7 @@ function printSchedule() {
     ).join('')
 
     const leave = !day.shifts.length && day.onLeave
-      ? `<div class="leave">🌴 Congé</div>` : ''
+      ? `<div class="leave">🌴 ${t('schedule.leave')}</div>` : ''
 
     return `<div class="${cls}">
       <span class="${numCls}">${day.dayNum}</span>
@@ -534,7 +541,7 @@ function printSchedule() {
     let weekNum = ''
     if (firstDay) {
       const d = new Date(parsedMonth.value.year, parsedMonth.value.month - 1, firstDay.dayNum)
-      weekNum = `S${isoWeek(d)}`
+      weekNum = `${t('schedule.weekPrefix')}${isoWeek(d)}`
     }
 
     const wkMins  = weekMinutes(row)
@@ -553,11 +560,12 @@ function printSchedule() {
   const nShifts   = calendarDays.value.reduce((a, d) => a + d.shifts.length, 0)
 
   // ── HTML ───────────────────────────────────────────────────────────────────
+  const lang = locale.value === 'fr' ? 'fr' : 'en'
   const html = `<!DOCTYPE html>
-<html lang="fr">
+<html lang="${lang}">
 <head>
   <meta charset="utf-8">
-  <title>Planning ${title} — ${name}</title>
+  <title>${t('schedule.scheduleTitle')} ${title} — ${name}</title>
   <style>
     @page { size: A4 landscape; margin: 8mm 10mm; }
     *, *::before, *::after { box-sizing: border-box; }
@@ -693,36 +701,31 @@ function printSchedule() {
       <span class="dot">·</span>
       <span class="month">${title}</span>
     </div>
-    <span class="meta">Généré le ${genDate}</span>
+    <span class="meta">${t('schedule.generatedOn')} ${genDate}</span>
   </div>
 
   <div class="col-headers">
     <div class="ch-wk"></div>
-    <div class="ch-day">Lundi</div>
-    <div class="ch-day">Mardi</div>
-    <div class="ch-day">Mercredi</div>
-    <div class="ch-day">Jeudi</div>
-    <div class="ch-day">Vendredi</div>
-    <div class="ch-day we">Samedi</div>
-    <div class="ch-day we">Dimanche</div>
+    ${weekDayLabels.value.slice(0, 5).map(d => `<div class="ch-day">${d}</div>`).join('\n    ')}
+    ${weekDayLabels.value.slice(5).map(d => `<div class="ch-day we">${d}</div>`).join('\n    ')}
   </div>
 
   ${rowsHtml}
 
   <div class="footer">
-    <div class="footer-stat">Total&nbsp;: <strong>${totLabel}</strong></div>
-    <div class="footer-stat"><strong>${nShifts}</strong> poste${nShifts !== 1 ? 's' : ''}</div>
+    <div class="footer-stat">${t('schedule.totalLabel')} <strong>${totLabel}</strong></div>
+    <div class="footer-stat"><strong>${nShifts}</strong> ${t('schedule.shifts', nShifts)}</div>
     <div class="legend">
-      <div class="leg-item"><div class="leg-dot leg-am"></div> Matin (&lt;12h)</div>
-      <div class="leg-item"><div class="leg-dot leg-pm"></div> Après-midi (12–16h)</div>
-      <div class="leg-item"><div class="leg-dot leg-eve"></div> Soir (≥16h)</div>
+      <div class="leg-item"><div class="leg-dot leg-am"></div> ${t('schedule.legendMorning')}</div>
+      <div class="leg-item"><div class="leg-dot leg-pm"></div> ${t('schedule.legendAfternoon')}</div>
+      <div class="leg-item"><div class="leg-dot leg-eve"></div> ${t('schedule.legendEvening')}</div>
     </div>
   </div>
 </body>
 </html>`
 
   const win = window.open('', '_blank', 'width=1200,height=850')
-  if (!win) { alert('Veuillez autoriser les fenêtres pop-up pour imprimer.'); return }
+  if (!win) { alert(t('schedule.allowPopups')); return }
   win.document.write(html)
   win.document.close()
   win.focus()

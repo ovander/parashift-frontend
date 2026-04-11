@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDirtyState } from '@/composables/useDirtyState'
 import { useScheduleApi } from '@/composables/useApi'
 import { useUiStore } from '@/stores/ui'
@@ -17,6 +18,7 @@ import type {
 } from '@/types'
 
 export const useScheduleStore = defineStore('schedule', () => {
+  const { t } = useI18n()
   const dirty = useDirtyState('schedule')
   const api   = useScheduleApi()
   const ui    = useUiStore()
@@ -190,7 +192,7 @@ export const useScheduleStore = defineStore('schedule', () => {
       // Generic network / server error
       log.error('assign failed — rolling back', err)
       assignments.value = prevAssignments
-      ui.showToast('error', 'Assignment failed', extractApiError(err))
+      ui.showToast('error', t('errors.assignmentFailed'), extractApiError(err))
       throw err
     }
   }
@@ -220,7 +222,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     } catch (err) {
       log.error('unassign failed — rolling back', err)
       assignments.value = prev
-      ui.showToast('error', 'Unassign failed', extractApiError(err))
+      ui.showToast('error', t('errors.unassignFailed'), extractApiError(err))
       throw err
     }
   }
@@ -248,8 +250,8 @@ export const useScheduleStore = defineStore('schedule', () => {
 
       ui.showToast(
         'success',
-        'Week reset',
-        `${deleted} assignment${deleted !== 1 ? 's' : ''} removed`,
+        t('schedule.weekReset'),
+        t('schedule.weekResetDetail', { count: deleted }),
       )
 
       // Refresh coverage after reset (non-blocking)
@@ -260,7 +262,7 @@ export const useScheduleStore = defineStore('schedule', () => {
       return deleted
     } catch (err) {
       log.error('resetWeek failed', err)
-      ui.showToast('error', 'Reset failed', extractApiError(err))
+      ui.showToast('error', t('errors.resetFailed'), extractApiError(err))
       // Re-fetch assignments to restore consistent state
       await fetchWeek(storeId, weekStart, true)
       throw err
@@ -296,7 +298,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     } catch (err) {
       log.error('deleteException failed — rolling back', err)
       exceptions.value = prev
-      ui.showToast('error', 'Delete failed', extractApiError(err))
+      ui.showToast('error', t('errors.deleteFailed'), extractApiError(err))
       throw err
     }
   }
@@ -331,7 +333,7 @@ export const useScheduleStore = defineStore('schedule', () => {
         if (idx !== -1) {
           assignments.value[idx] = { ...assignments.value[idx], acknowledged_at: undefined }
         }
-        ui.showToast('error', 'Could not confirm shift', extractApiError(err))
+        ui.showToast('error', t('schedule.confirmShiftFailed'), extractApiError(err))
         throw err
       }
       log.warn('acknowledgeAssignment ← 404 (endpoint pending deployment) — keeping optimistic state')
@@ -348,11 +350,11 @@ export const useScheduleStore = defineStore('schedule', () => {
     ui.setLoading(true, 'Regenerating schedule from templates…')
     try {
       await api.post(`/api/v1/stores/${storeId}/shifts/regenerate?week_of=${weekStart}`)
-      ui.showToast('success', 'Schedule regenerated', 'The week was re-projected from A/B templates.')
+      ui.showToast('success', t('schedule.regenerated'), t('schedule.regeneratedDetail'))
       await fetchWeek(storeId, weekStart, true)
     } catch (err) {
       log.error('regenerateWeek failed', err)
-      ui.showToast('error', 'Regeneration failed', extractApiError(err))
+      ui.showToast('error', t('errors.generationFailed'), extractApiError(err))
       throw err
     } finally {
       loading.value = false
@@ -379,11 +381,11 @@ export const useScheduleStore = defineStore('schedule', () => {
       )
       const count = res.data.shifts_created ?? 0
       log.info('generateFromTemplates ←', { count })
-      ui.showToast('success', 'Schedule generated', `${count} shifts created from A/B templates.`)
+      ui.showToast('success', t('schedule.generated'), t('schedule.generatedDetail', { count }))
       return count
     } catch (err) {
       log.error('generateFromTemplates failed', err)
-      ui.showToast('error', 'Generation failed', extractApiError(err))
+      ui.showToast('error', t('errors.generationFailed'), extractApiError(err))
       throw err
     } finally {
       ui.setLoading(false)

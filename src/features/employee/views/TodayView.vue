@@ -1,10 +1,9 @@
 <template>
-  <div class="flex flex-col h-screen bg-gray-100">
+  <div class="flex flex-col h-full bg-gray-100">
 
     <!-- ── Header ─────────────────────────────────────────────────────── -->
     <header class="bg-white border-b px-4 py-3 flex items-center justify-between">
-      <h1 class="font-semibold text-gray-900">Today</h1>
-      <!-- Sprint 3.3: system locale (was hardcoded 'en-GB') -->
+      <h1 class="font-semibold text-gray-900">{{ t('schedule.today') }}</h1>
       <span class="text-sm text-gray-500">{{ todayFormatted }}</span>
     </header>
 
@@ -13,11 +12,10 @@
       <div class="bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 flex items-center gap-2 text-sm">
         <i class="pi pi-exclamation-circle text-orange-500" />
         <span class="text-orange-800">
-          {{ swapStore.pendingIncoming.length }}
-          pending swap request{{ swapStore.pendingIncoming.length > 1 ? 's' : '' }}
+          {{ t('swap.pendingCount', swapStore.pendingIncoming.length, { n: swapStore.pendingIncoming.length }) }}
         </span>
         <button class="ml-auto text-orange-600 font-medium text-xs" @click="mobileTab = 'requests'">
-          Review
+          {{ t('swap.review') }}
         </button>
       </div>
     </div>
@@ -36,13 +34,13 @@
         <div v-if="todayLeave" class="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-center">
           <i class="pi pi-sun text-2xl block mb-1 text-emerald-500" />
           <p class="font-semibold text-emerald-700 capitalize">{{ todayLeave }}</p>
-          <p class="text-xs text-emerald-500 mt-0.5">Approved leave</p>
+          <p class="text-xs text-emerald-500 mt-0.5">{{ t('schedule.approvedLeave') }}</p>
         </div>
 
         <!-- Conflict warning: on leave but still scheduled -->
         <div v-if="todayLeave && todayShifts.length > 0" class="rounded-lg bg-orange-50 border border-orange-200 px-3 py-2 flex items-center gap-2 text-xs text-orange-800">
           <i class="pi pi-exclamation-triangle text-orange-500 flex-shrink-0" />
-          You are still scheduled during this leave — contact your manager to resolve the conflict.
+          {{ t('schedule.leaveConflictWarning') }}
         </div>
 
         <!-- No shift today (and no leave) → show holiday name, or a simple "day off" message -->
@@ -50,11 +48,11 @@
           <template v-if="todayHoliday">
             <i class="pi pi-star text-3xl block mb-3 text-amber-400" />
             <p class="font-semibold text-amber-700 text-base">{{ todayHoliday }}</p>
-            <p class="text-sm text-amber-500 mt-1">Jour férié</p>
+            <p class="text-sm text-amber-500 mt-1">{{ t('schedule.publicHoliday') }}</p>
           </template>
           <template v-else>
             <i class="pi pi-sun text-3xl block mb-3 text-gray-300" />
-            <p class="text-gray-400">Jour de repos</p>
+            <p class="text-gray-400">{{ t('schedule.dayOff') }}</p>
           </template>
         </div>
 
@@ -89,7 +87,7 @@
                 class="text-xs text-red-500 font-medium px-2 py-1 rounded hover:bg-red-50"
                 @click="showEmergencyReplace(shift, a)"
               >
-                Replace
+                {{ t('schedule.todayView.replace') }}
               </button>
             </div>
 
@@ -99,7 +97,7 @@
               class="w-full text-sm text-brand-600 font-medium border-2 border-dashed border-brand-200 rounded-lg py-2 hover:bg-brand-50 transition-colors"
               @click="showQuickAssign(shift)"
             >
-              <i class="pi pi-plus mr-1" /> Assign employee
+              <i class="pi pi-plus mr-1" /> {{ t('schedule.todayView.assignEmployee') }}
             </button>
           </div>
         </div>
@@ -128,7 +126,7 @@
       <template v-else>
         <div v-if="teamToday.length === 0" class="text-center py-12 text-gray-400">
           <i class="pi pi-users text-3xl block mb-3" />
-          <p>No one on shift today</p>
+          <p>{{ t('schedule.todayView.noOneOnShift') }}</p>
         </div>
         <div
           v-for="entry in teamToday"
@@ -159,13 +157,13 @@
 
       <!-- My leave requests -->
       <div class="space-y-2">
-        <h3 class="text-sm font-semibold text-gray-700">My leave requests</h3>
+        <h3 class="text-sm font-semibold text-gray-700">{{ t('schedule.todayView.myLeaveRequests') }}</h3>
 
         <div v-if="leaveStore.loading" class="space-y-2">
           <Skeleton v-for="i in 2" :key="i" height="56px" border-radius="12px" />
         </div>
         <div v-else-if="myLeaves.length === 0" class="text-center py-6 text-gray-400 text-sm">
-          No leave requests yet
+          {{ t('schedule.todayView.noLeaveYet') }}
         </div>
         <div
           v-else
@@ -174,7 +172,7 @@
           class="bg-white rounded-xl border p-3 flex items-start justify-between gap-3"
         >
           <div class="min-w-0">
-            <p class="text-sm font-medium text-gray-800 capitalize">{{ leave.type }}</p>
+            <p class="text-sm font-medium text-gray-800">{{ t(`leave.type.${leave.type}`, leave.type) }}</p>
             <p class="text-xs text-gray-500">{{ leave.start_date }} – {{ leave.end_date }}</p>
             <p v-if="leave.reason" class="text-xs text-gray-400 italic mt-0.5 truncate">{{ leave.reason }}</p>
           </div>
@@ -212,7 +210,7 @@
     <!-- ── Quick assign bottom sheet ───────────────────────────────────── -->
     <Drawer v-model:visible="quickAssignVisible" position="bottom" :style="{ height: '60vh' }">
       <template #header>
-        <span class="font-semibold">Quick Assign</span>
+        <span class="font-semibold">{{ t('schedule.todayView.quickAssign') }}</span>
       </template>
       <QuickAssignSheet
         v-if="selectedShift"
@@ -228,6 +226,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useLocale } from '@/composables/useLocale'
+import { fmtLocal } from '@/utils/dateUtils'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
 import Tag from 'primevue/tag'
@@ -246,6 +246,7 @@ import QuickAssignSheet from '../components/QuickAssignSheet.vue'
 import type { ShiftInstance, Assignment, LeaveStatus } from '@/types'
 
 const { t }         = useI18n()
+const { locale }    = useLocale()
 const scheduleStore = useScheduleStore()
 const employeeStore = useEmployeeStore()
 const swapStore     = useSwapStore()
@@ -261,15 +262,15 @@ const isManager = computed(() =>
 // ── Tabs ──────────────────────────────────────────────────────────────
 const mobileTab = ref<'today' | 'week' | 'team' | 'requests'>('today')
 
-const mobileTabs = [
-  { id: 'today'    as const, label: 'Today',    icon: 'pi pi-sun' },
-  { id: 'week'     as const, label: 'Week',     icon: 'pi pi-calendar' },
-  { id: 'team'     as const, label: 'Team',     icon: 'pi pi-users' },
-  { id: 'requests' as const, label: 'Requests', icon: 'pi pi-inbox' },
-]
+const mobileTabs = computed(() => [
+  { id: 'today'    as const, label: t('schedule.today'),    icon: 'pi pi-sun' },
+  { id: 'week'     as const, label: t('schedule.week'),     icon: 'pi pi-calendar' },
+  { id: 'team'     as const, label: t('employee.team'),     icon: 'pi pi-users' },
+  { id: 'requests' as const, label: t('swap.requests'),     icon: 'pi pi-inbox' },
+])
 
 // ── Date helpers ──────────────────────────────────────────────────────
-const today = new Date().toISOString().split('T')[0]
+const today = fmtLocal(new Date())
 
 // Public holidays for the current week (covers today)
 const weekStartRef           = computed(() => ctx.weekStart)
@@ -279,9 +280,11 @@ const todayHoliday           = computed(() =>
 )
 
 // Sprint 3.3: removed hardcoded 'en-GB', uses system locale
-const todayFormatted = new Date().toLocaleDateString(undefined, {
-  weekday: 'long', day: 'numeric', month: 'long',
-})
+const todayFormatted = computed(() =>
+  new Date().toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  })
+)
 
 function isoWeekNumber(d: Date): number {
   const date = new Date(d.getTime())

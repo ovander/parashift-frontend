@@ -1,0 +1,22 @@
+{
+  "ok": "OK",
+  "understaffed": "Sous-effectif",
+  "missingRole": "Rôle manquant",
+  "overstaffed": "Sur-effectif",
+  "noRequirement": "Sans exigence",
+  "publicHoliday": "Jour férié",
+  "gapAlert": "{count} manque de couverture détecté cette semaine. | {count} manques de couverture détectés cette semaine.",
+  "viewCoverage": "Voir la couverture →",
+  "totalSlots": "Créneaux totaux :",
+  "gaps": "Manques :",
+  "roleNotSatisfied": "Exigence de rôle non satisfaite",
+  "roleNotSatisfiedDesc": "Vos exigences de couverture nécessitent le rôle {roles} mais aucun de vos employés ne possède ce rôle. Les employés ont actuellement les rôles : {employeeRoles}.",
+  "roleNotSatisfiedFix": "Solution : allez dans Config magasin → Exigences de couverture et soit effacez le champ Rôle requis, soit changez-le en {role}.",
+  "storeConfig": "Config magasin → Exigences de couverture",
+  "noData": "Aucune donnée de couverture disponible.",
+  "noRequirementTooltip": "pas d'exigence",
+  "cellTooltip": "{date} {hour}:00 — {assigned}/{required}",
+  "dashboard": "Tableau de bord couverture",
+  "viewWeek": "Semaine",
+  "viewMonth": "Mois"
+}

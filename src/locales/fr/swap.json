@@ -1,0 +1,20 @@
+{
+  "title": "Échanges de quarts",
+  "request": "Demander un échange",
+  "incoming": "Demandes reçues",
+  "accept": "Accepter",
+  "decline": "Refuser",
+  "count": "0 échange | 1 échange | {n} échanges",
+  "requestSent": "Demande d'échange envoyée",
+  "accepted": "Échange accepté",
+  "declined": "Échange refusé",
+  "requests": "Demandes",
+  "approval": "Demandes d'échange",
+  "colRequester": "Demandeur",
+  "colTarget": "Destinataire",
+  "colNote": "Note",
+  "colStatus": "Statut",
+  "noSwaps": "Aucune demande d'échange.",
+  "pendingCount": "aucune demande d'échange en attente | {n} demande d'échange en attente | {n} demandes d'échange en attente",
+  "review": "Consulter"
+}

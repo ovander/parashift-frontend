@@ -3,13 +3,13 @@
     <!-- Header -->
     <div class="p-3 border-b">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-sm font-semibold text-gray-700">Team Roster</span>
+        <span class="text-sm font-semibold text-gray-700">{{ t('schedule.operate.teamRoster') }}</span>
         <Badge :value="String(readyCount)" severity="success" />
       </div>
       <InputText
         v-model="search"
         size="small"
-        placeholder="Search employees…"
+        :placeholder="t('schedule.operate.searchPlaceholder')"
         class="w-full text-xs"
         prefix-icon="pi pi-search"
       />
@@ -44,7 +44,7 @@
         </div>
         <div v-if="hasQualAlert(emp.id)" class="mt-1">
           <span class="text-xs text-orange-600 flex items-center gap-0.5">
-            <i class="pi pi-exclamation-circle text-xs" /> Expiring quals
+            <i class="pi pi-exclamation-circle text-xs" /> {{ t('schedule.operate.expiringQuals') }}
           </span>
         </div>
       </div>
@@ -55,12 +55,14 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Badge from 'primevue/badge'
 import InputText from 'primevue/inputtext'
 import { useEmployeeStore } from '@/features/employees/stores/employeeStore'
 import { useScheduleStore } from '@/features/schedule/stores/scheduleStore'
 import { useQualificationStore } from '@/features/qualifications/stores/qualificationStore'
 
+const { t } = useI18n()
 const emit = defineEmits<{ 'drag-employee': [employeeId: string] }>()
 
 const employeeStore = useEmployeeStore()

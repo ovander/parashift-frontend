@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '@/composables/useApi'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
@@ -9,6 +10,7 @@ const log = createDevlog('SwapStore')
 import type { SwapRequest } from '@/types'
 
 export const useSwapStore = defineStore('swap', () => {
+  const { t } = useI18n()
   const swaps   = ref<SwapRequest[]>([])
   const loading = ref(false)
   const auth    = useAuthStore()
@@ -28,7 +30,7 @@ export const useSwapStore = defineStore('swap', () => {
       log.info('fetchSwaps ←', { count: swaps.value.length, pendingIncoming: pendingIncoming.value.length })
     } catch (err) {
       log.error('fetchSwaps failed', err)
-      useUiStore().showToast('error', 'Failed to load swaps', extractApiError(err))
+      useUiStore().showToast('error', t('errors.loadFailed'), extractApiError(err))
     } finally {
       loading.value = false
     }
@@ -40,10 +42,10 @@ export const useSwapStore = defineStore('swap', () => {
       const res = await api.post<SwapRequest>(`/api/v1/stores/${storeId}/swap-requests`, payload)
       swaps.value.push(res.data)
       log.info('createSwap ← created', { swapId: res.data.id, status: res.data.status })
-      useUiStore().showToast('success', 'Swap request sent')
+      useUiStore().showToast('success', t('swap.requestSent'))
     } catch (err) {
       log.error('createSwap failed', err)
-      useUiStore().showToast('error', 'Swap request failed', extractApiError(err))
+      useUiStore().showToast('error', t('errors.swapRequestFailed'), extractApiError(err))
       throw err
     }
   }
@@ -60,10 +62,10 @@ export const useSwapStore = defineStore('swap', () => {
       const idx = swaps.value.findIndex((s) => s.id === swapId)
       if (idx !== -1) swaps.value[idx] = res.data
       log.info('respondToSwap ←', { swapId, action, newStatus: res.data.status })
-      useUiStore().showToast('success', action === 'accept' ? 'Swap accepted' : 'Swap declined')
+      useUiStore().showToast('success', action === 'accept' ? t('swap.accepted') : t('swap.declined'))
     } catch (err) {
       log.error('respondToSwap failed', { swapId, action }, err)
-      useUiStore().showToast('error', 'Action failed', extractApiError(err))
+      useUiStore().showToast('error', t('errors.swapActionFailed'), extractApiError(err))
       throw err
     }
   }

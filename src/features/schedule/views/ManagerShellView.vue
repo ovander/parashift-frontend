@@ -29,7 +29,7 @@
           @click="ctx.nextWeek()"
         />
         <Button
-          label="Today"
+          :label="t('schedule.today')"
           text
           size="small"
           class="ml-1"
@@ -61,13 +61,23 @@
       <LayerToggles v-if="mode !== 'monitor'" />
 
       <div class="ml-auto flex items-center gap-2">
+        <!-- Panel toggle — drawer on mobile/tablet, sidebar on desktop -->
+        <Button
+          v-if="!isDesktop"
+          icon="pi pi-layout"
+          text
+          rounded
+          size="small"
+          v-tooltip="'Show panel'"
+          @click="panelDrawerOpen = true"
+        />
         <!-- Generate from A/B templates -->
         <Button
-          label="Generate"
+          :label="isDesktop ? 'Generate' : undefined"
           icon="pi pi-calendar-plus"
           size="small"
           outlined
-          v-tooltip="'Generate shifts from A/B employee templates'"
+          v-tooltip="!isDesktop ? 'Generate shifts from A/B employee templates' : undefined"
           @click="generateDialogOpen = true"
         />
         <div class="h-5 w-px bg-gray-200" />
@@ -99,24 +109,26 @@
 
     <!-- Body: left panel + calendar -->
     <div class="flex flex-1 min-h-0">
-      <!-- Left panel — collapsible with a toggle button on its edge -->
-      <div
-        class="relative flex-shrink-0 transition-all duration-200 overflow-hidden"
-        :class="panelOpen ? (mode === 'operate' ? 'w-64' : 'w-72') : 'w-0'"
-      >
-        <OperateLeftPanel  v-if="mode === 'operate'"  class="h-full" />
-        <OptimizeLeftPanel v-else-if="mode === 'optimize'" class="h-full" />
-        <MonitorLeftPanel  v-else-if="mode === 'monitor'"  class="h-full" />
-      </div>
+      <!-- Left panel — sidebar on desktop only -->
+      <template v-if="isDesktop">
+        <div
+          class="relative flex-shrink-0 transition-all duration-200 overflow-hidden"
+          :class="panelOpen ? (mode === 'operate' ? 'w-64' : 'w-72') : 'w-0'"
+        >
+          <OperateLeftPanel  v-if="mode === 'operate'"  class="h-full" />
+          <OptimizeLeftPanel v-else-if="mode === 'optimize'" class="h-full" />
+          <MonitorLeftPanel  v-else-if="mode === 'monitor'"  class="h-full" />
+        </div>
 
-      <!-- Panel toggle button — sits between the panel and the calendar -->
-      <button
-        class="flex-shrink-0 self-center z-10 -mx-2.5 w-5 h-12 flex items-center justify-center bg-white border border-gray-200 rounded-full shadow-sm text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
-        :title="panelOpen ? 'Hide panel' : 'Show panel'"
-        @click="panelOpen = !panelOpen"
-      >
-        <i class="pi text-[10px]" :class="panelOpen ? 'pi-chevron-left' : 'pi-chevron-right'" />
-      </button>
+        <!-- Panel toggle button — sits between the panel and the calendar -->
+        <button
+          class="flex-shrink-0 self-center z-10 -mx-2.5 w-5 h-12 flex items-center justify-center bg-white border border-gray-200 rounded-full shadow-sm text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+          :title="panelOpen ? 'Hide panel' : 'Show panel'"
+          @click="panelOpen = !panelOpen"
+        >
+          <i class="pi text-[10px]" :class="panelOpen ? 'pi-chevron-left' : 'pi-chevron-right'" />
+        </button>
+      </template>
 
       <!-- Calendar area -->
       <div class="flex-1 min-w-0 overflow-hidden p-2">
@@ -142,35 +154,32 @@
     <VersionHistoryPanel v-model:visible="historyVisible" />
 
     <!-- Generate schedule dialog -->
-    <Dialog
+    <ResponsiveDialog
       v-model:visible="generateDialogOpen"
-      header="Generate schedule from A/B templates"
-      modal
-      :style="{ width: '440px' }"
+      :header="t('schedule.shell.generateDialogTitle')"
+      size="sm"
     >
       <div class="space-y-4 pt-1">
         <p class="text-sm text-gray-600">
-          This will generate shifts for all employees that have an A/B template configured,
-          alternating week types from the store's anchor date.
-          Existing TEMPLATE-sourced shifts in the selected range are replaced.
+          {{ t('schedule.shell.generateDescription') }}
         </p>
         <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">From (Monday)</label>
+            <label class="text-sm font-medium text-gray-700">{{ t('schedule.shell.fromDate') }}</label>
             <DatePicker
               v-model="generateFrom"
               date-format="yy-mm-dd"
               show-icon
-              placeholder="YYYY-MM-DD"
+              :placeholder="t('common.dateFormatPlaceholder')"
             />
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">To (Sunday)</label>
+            <label class="text-sm font-medium text-gray-700">{{ t('schedule.shell.toDate') }}</label>
             <DatePicker
               v-model="generateTo"
               date-format="yy-mm-dd"
               show-icon
-              placeholder="YYYY-MM-DD"
+              :placeholder="t('common.dateFormatPlaceholder')"
             />
           </div>
         </div>
@@ -183,36 +192,48 @@
             :outlined="!preset.fullReset"
             :severity="preset.fullReset ? 'warn' : undefined"
             :icon="preset.fullReset ? 'pi pi-refresh' : undefined"
-            :title="preset.fullReset ? 'Regenerates all weeks: 52 weeks back + 52 weeks forward from today' : undefined"
+            :title="preset.fullReset ? t('schedule.shell.presetFullResetTooltip') : undefined"
             @click="applyPreset(preset)"
           />
         </div>
         <p v-if="generateFrom && generateTo" class="text-xs text-gray-400">
-          Range: {{ fmtDate(generateFrom) }} → {{ fmtDate(generateTo) }}
-          ({{ weeksBetween(generateFrom, generateTo) }} weeks)
+          {{ t('schedule.shell.range') }} {{ fmtDate(generateFrom) }} → {{ fmtDate(generateTo) }}
+          ({{ weeksBetween(generateFrom, generateTo) }} {{ t('schedule.shell.weeks') }})
         </p>
       </div>
       <template #footer>
-        <Button label="Cancel" outlined @click="generateDialogOpen = false" />
+        <Button :label="t('common.cancel')" outlined @click="generateDialogOpen = false" />
         <Button
-          label="Generate"
+          :label="t('schedule.shell.generate')"
           icon="pi pi-calendar-plus"
           :loading="generating"
           :disabled="!generateFrom || !generateTo"
           @click="runGenerate"
         />
       </template>
-    </Dialog>
+    </ResponsiveDialog>
 
     <!-- AI panel -->
-    <Drawer v-model:visible="aiPanelOpen" position="right" :style="{ width: '420px' }">
+    <AppDrawer v-model:visible="aiPanelOpen" position="right" size="md">
       <template #header>
         <span class="font-semibold flex items-center gap-2">
-          <i class="pi pi-sparkles text-brand-500" /> AI Assistant
+          <i class="pi pi-sparkles text-brand-500" /> {{ t('schedule.shell.aiAssistant') }}
         </span>
       </template>
       <AIPanel :store-id="ctx.storeId" />
-    </Drawer>
+    </AppDrawer>
+
+    <!-- Left panel as drawer — mobile/tablet only -->
+    <AppDrawer v-if="!isDesktop" v-model:visible="panelDrawerOpen" position="left" size="md">
+      <template #header>
+        <span class="font-semibold capitalize">{{ mode }}</span>
+      </template>
+      <div class="h-full overflow-y-auto">
+        <OperateLeftPanel  v-if="mode === 'operate'"  />
+        <OptimizeLeftPanel v-else-if="mode === 'optimize'" />
+        <MonitorLeftPanel  v-else-if="mode === 'monitor'"  />
+      </div>
+    </AppDrawer>
 
     <Toast />
   </div>
@@ -220,9 +241,12 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useLocale } from '@/composables/useLocale'
 import FullCalendar from '@fullcalendar/vue3'
-import Drawer from 'primevue/drawer'
-import Dialog from 'primevue/dialog'
+import AppDrawer from '@/components/common/AppDrawer.vue'
+import ResponsiveDialog from '@/components/common/ResponsiveDialog.vue'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 import DatePicker from 'primevue/datepicker'
 import Skeleton from 'primevue/skeleton'
 import Toast from 'primevue/toast'
@@ -236,6 +260,7 @@ import { usePlannerCalendar } from '../composables/usePlannerCalendar'
 import { usePlannerLayers } from '../composables/usePlannerLayers'
 import { usePublicHolidays } from '../composables/usePublicHolidays'
 import { createDevlog } from '@/utils/logger'
+import { fmtLocal } from '@/utils/dateUtils'
 
 import LayerToggles           from '../components/LayerToggles.vue'
 import PlanLifecycleBar       from '../components/PlanLifecycleBar.vue'
@@ -249,6 +274,8 @@ import VersionHistoryPanel    from '../components/VersionHistoryPanel.vue'
 import AIPanel                from '@/features/ai/components/AIPanel.vue'
 import type { ManagerMode } from '@/types'
 
+const { t } = useI18n()
+const { locale } = useLocale()
 const log = createDevlog('ManagerShellView')
 
 const ctx = useStoreContext()
@@ -257,13 +284,22 @@ const scheduleStore = useScheduleStore()
 const employeeStore = useEmployeeStore()
 const { layers } = usePlannerLayers()
 
+const { isDesktop, isTabletUp } = useBreakpoint()
+
 const mode = ref<ManagerMode>('operate')
 const aiPanelOpen = ref(false)
 const publishDialogVisible = ref(false)
 const historyVisible = ref(false)
 const pendingOverrideShiftIds = ref<string[]>([])
-// Left panel collapse — persisted in localStorage per mode would be over-engineered; a single flag is enough.
-const panelOpen = ref(true)
+// Left panel: sidebar on desktop, drawer on mobile/tablet.
+const panelOpen       = ref(true)  // sidebar open/close on desktop
+const panelDrawerOpen = ref(false) // drawer open/close on mobile/tablet
+
+// Auto-collapse sidebar on small screens when breakpoint changes.
+watch(isDesktop, (desktop) => {
+  if (!desktop) panelOpen.value = false
+  else panelOpen.value = true
+}, { immediate: false })
 
 // ── Generate schedule from A/B templates ─────────────────────────────────────
 const generateDialogOpen = ref(false)
@@ -279,12 +315,18 @@ interface GeneratePreset {
 }
 
 // Quick presets: short-range go to next Monday; Full reset covers current week ±52w.
-const generatePresets: GeneratePreset[] = [
-  { label: '1 week',     futureWeeks: 1 },
-  { label: '2 weeks',    futureWeeks: 2 },
-  { label: '4 weeks',    futureWeeks: 4 },
-  { label: 'Full reset', futureWeeks: 52, pastWeeks: 52, fullReset: true },
-]
+const modes = computed(() => [
+  { id: 'operate'  as ManagerMode, label: t('schedule.shell.operateMode'),  icon: 'pi pi-calendar-clock' },
+  { id: 'optimize' as ManagerMode, label: t('schedule.shell.optimizeMode'), icon: 'pi pi-sliders-h' },
+  { id: 'monitor'  as ManagerMode, label: t('schedule.shell.monitorMode'),  icon: 'pi pi-chart-line' },
+])
+
+const generatePresets = computed(() => [
+  { label: t('schedule.shell.preset1Week'),     futureWeeks: 1 },
+  { label: t('schedule.shell.preset2Weeks'),    futureWeeks: 2 },
+  { label: t('schedule.shell.preset4Weeks'),    futureWeeks: 4 },
+  { label: t('schedule.shell.presetFullReset'), futureWeeks: 52, pastWeeks: 52, fullReset: true },
+])
 
 /** Monday of the ISO week that contains d. */
 function mondayOfWeek(d: Date): Date {
@@ -318,14 +360,14 @@ function applyPreset(preset: GeneratePreset) {
   generateTo.value   = to
 }
 
-const fmtDate = (d: Date) => d.toISOString().split('T')[0]
+const fmtDate = (d: Date) => fmtLocal(d)
 function weeksBetween(from: Date, to: Date): number {
   return Math.round((to.getTime() - from.getTime()) / (7 * 86_400_000)) + 1
 }
 
 async function runGenerate() {
   if (!generateFrom.value || !generateTo.value) return
-  const fmt = (d: Date) => d.toISOString().split('T')[0]
+  const fmt = (d: Date) => fmtLocal(d)
   generating.value = true
   try {
     await scheduleStore.generateFromTemplates(
@@ -342,12 +384,6 @@ async function runGenerate() {
     generating.value = false
   }
 }
-
-const modes = [
-  { id: 'operate'  as ManagerMode, label: 'Operate',  icon: 'pi pi-calendar-clock' },
-  { id: 'optimize' as ManagerMode, label: 'Optimize', icon: 'pi pi-sliders-h' },
-  { id: 'monitor'  as ManagerMode, label: 'Monitor',  icon: 'pi pi-chart-line' },
-]
 
 // Log mode changes
 watch(mode, (next, prev) => {
@@ -366,7 +402,7 @@ const weekHolidays = computed(() => {
 
 const weekLabel = computed(() => {
   const d = new Date(ctx.weekStart + 'T00:00:00')
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 })
 
 const { calendarOptions } = usePlannerCalendar({
@@ -397,7 +433,7 @@ function goToCurrentWeek() {
   const day = now.getDay()
   const diff = day === 0 ? -6 : 1 - day
   now.setDate(now.getDate() + diff)
-  const weekStart = now.toISOString().split('T')[0]
+  const weekStart = fmtLocal(now)
   log.info('goToCurrentWeek →', { weekStart })
   ctx.setWeek(weekStart)
 }

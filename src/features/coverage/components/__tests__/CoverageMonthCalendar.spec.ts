@@ -62,8 +62,8 @@ describe('CoverageMonthCalendar — grid structure', () => {
     })
     const headers = wrapper.findAll('.grid.grid-cols-7 > div:not([data-iso])')
     expect(headers.length).toBe(7)
-    expect(headers[0].text()).toBe('Lun')
-    expect(headers[6].text()).toBe('Dim')
+    expect(headers[0].text()).toBe('Mon')
+    expect(headers[6].text()).toBe('Sun')
   })
 
   // April 2026: 1st is Wednesday (Mon+2 → skip 2 cells)
@@ -281,6 +281,6 @@ describe('CoverageMonthCalendar — legend', () => {
     expect(text).toContain('Missing role')
     expect(text).toContain('Overstaffed')
     expect(text).toContain('No requirement')
-    expect(text).toContain('Jour férié')
+    expect(text).toContain('Public holiday')
   })
 })

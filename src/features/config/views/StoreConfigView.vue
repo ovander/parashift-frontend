@@ -2,7 +2,7 @@
   <div class="p-6 max-w-4xl mx-auto space-y-10 overflow-y-auto h-full">
 
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold text-gray-900">Store Configuration</h1>
+      <h1 class="text-xl font-semibold text-gray-900">{{ t('config.title') }}</h1>
       <!-- DEV ONLY: Audit trail -->
       <Button
         v-if="isDev"
@@ -20,11 +20,11 @@
     <section class="space-y-4">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-base font-semibold text-gray-800">Opening hours</h2>
-          <p class="text-sm text-gray-400 mt-0.5">When the store is open each day of the week.</p>
+          <h2 class="text-base font-semibold text-gray-800">{{ t('config.openingHours.title') }}</h2>
+          <p class="text-sm text-gray-400 mt-0.5">{{ t('config.openingHours.subtitle') }}</p>
         </div>
         <Button
-          label="Save hours"
+          :label="t('config.openingHours.saveBtn')"
           icon="pi pi-check"
           size="small"
           :loading="store.savingHours"
@@ -51,7 +51,7 @@
               @change="markHoursDirty"
             />
             <span class="text-sm" :class="row.open ? 'text-gray-700' : 'text-gray-400'">
-              {{ row.open ? 'Open' : 'Closed' }}
+              {{ row.open ? t('config.openingHours.open') : t('config.openingHours.closed') }}
             </span>
           </label>
 
@@ -80,11 +80,11 @@
     <section class="space-y-4">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-base font-semibold text-gray-800">Coverage requirements</h2>
-          <p class="text-sm text-gray-400 mt-0.5">How many people per role are needed for each time slot.</p>
+          <h2 class="text-base font-semibold text-gray-800">{{ t('config.coverage.title') }}</h2>
+          <p class="text-sm text-gray-400 mt-0.5">{{ t('config.coverage.subtitle') }}</p>
         </div>
         <Button
-          label="Add requirement"
+          :label="t('config.coverage.addBtn')"
           icon="pi pi-plus"
           size="small"
           outlined
@@ -98,15 +98,15 @@
         </div>
         <div v-else-if="store.requirements.length === 0" class="py-10 text-center text-sm text-gray-400">
           <i class="pi pi-users text-2xl mb-2 block text-gray-300" />
-          No coverage requirements yet. Add the first one.
+          {{ t('config.coverage.noRequirements') }}
         </div>
         <div v-else>
           <!-- Header row -->
           <div class="grid grid-cols-[120px_130px_80px_160px_40px] gap-4 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400 border-b border-gray-100 bg-gray-50">
-            <span>Day</span>
-            <span>Time slot</span>
-            <span>Min staff</span>
-            <span>Role</span>
+            <span>{{ t('config.coverage.colDay') }}</span>
+            <span>{{ t('config.coverage.colTimeSlot') }}</span>
+            <span>{{ t('config.coverage.colMinStaff') }}</span>
+            <span>{{ t('config.coverage.colRole') }}</span>
             <span></span>
           </div>
           <div
@@ -129,7 +129,7 @@
               >
                 {{ req.required_role }}
               </span>
-              <span v-else class="text-gray-300 italic text-xs">any</span>
+              <span v-else class="text-gray-300 italic text-xs">{{ t('config.coverage.anyRole') }}</span>
             </span>
             <div class="flex gap-1">
               <Button icon="pi pi-pencil" text rounded size="small" @click="openEditDialog(req)" />
@@ -144,25 +144,23 @@
     <!-- ── Exceptional opening days ─────────────────────────────────── -->
     <section class="space-y-4">
       <div>
-        <h2 class="text-base font-semibold text-gray-800">Jours d'ouverture exceptionnelle</h2>
-        <p class="text-sm text-gray-400 mt-0.5">
-          Dimanches ou jours fériés où le magasin ouvre exceptionnellement. La couverture du personnel sera vérifiée pour ces jours.
-        </p>
+        <h2 class="text-base font-semibold text-gray-800">{{ t('config.exceptions.title') }}</h2>
+        <p class="text-sm text-gray-400 mt-0.5">{{ t('config.exceptions.subtitle') }}</p>
       </div>
 
       <!-- List -->
       <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div v-if="store.loadingExceptions" class="py-10 text-center text-sm text-gray-400">
-          Chargement…
+          {{ t('config.exceptions.loading') }}
         </div>
         <div v-else-if="upcomingExceptions.length === 0" class="py-8 text-center text-sm text-gray-400">
           <i class="pi pi-calendar text-2xl mb-2 block text-gray-300" />
-          Aucune ouverture exceptionnelle planifiée.
+          {{ t('config.exceptions.none') }}
         </div>
         <div v-else>
           <div class="grid grid-cols-[1fr_180px_36px] gap-4 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400 border-b border-gray-100 bg-gray-50">
-            <span>Date</span>
-            <span>Note</span>
+            <span>{{ t('config.exceptions.colDate') }}</span>
+            <span>{{ t('config.exceptions.colNote') }}</span>
             <span></span>
           </div>
           <div
@@ -178,7 +176,7 @@
                 🎉 {{ holidayNameForDate(ex.date) }}
               </span>
               <span v-else class="ml-2 text-xs text-gray-400">
-                {{ isSunday(ex.date) ? 'Dimanche' : '' }}
+                {{ isSunday(ex.date) ? t('config.exceptions.sunday') : '' }}
               </span>
             </div>
             <span class="text-gray-500 truncate">{{ ex.note || '–' }}</span>
@@ -196,10 +194,10 @@
 
       <!-- Add form -->
       <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        <p class="text-sm font-semibold text-gray-700">Ajouter un jour d'ouverture exceptionnelle</p>
+        <p class="text-sm font-semibold text-gray-700">{{ t('config.exceptions.addTitle') }}</p>
         <div class="flex flex-wrap gap-4 items-end">
           <div class="flex flex-col gap-1">
-            <label class="text-xs text-gray-500">Date</label>
+            <label class="text-xs text-gray-500">{{ t('config.exceptions.colDate') }}</label>
             <DatePicker
               v-model="newExDate"
               date-format="yy-mm-dd"
@@ -210,15 +208,15 @@
             />
           </div>
           <div class="flex flex-col gap-1 flex-1 min-w-32">
-            <label class="text-xs text-gray-500">Note (optionnel)</label>
+            <label class="text-xs text-gray-500">{{ t('config.exceptions.addNote') }}</label>
             <InputText
               v-model="newExNote"
               class="text-sm"
-              placeholder="ex. Inventaire, dimanche de décembre…"
+              :placeholder="t('config.exceptions.addNotePlaceholder')"
             />
           </div>
           <Button
-            label="Ajouter"
+            :label="t('config.exceptions.addBtn')"
             icon="pi pi-plus"
             size="small"
             :disabled="!newExDate"
@@ -230,12 +228,11 @@
     </section>
 
     <!-- ── Audit trail dialog (DEV only) ─────────────────────────────── -->
-    <Dialog
+    <ResponsiveDialog
       v-if="isDev"
       v-model:visible="auditOpen"
       header="🔍 Config Audit Trail"
-      modal
-      :style="{ width: '640px', maxHeight: '80vh' }"
+      size="lg"
       :pt="{ content: { style: 'overflow-y: auto' } }"
     >
       <div class="font-mono text-xs space-y-4 text-gray-800">
@@ -295,18 +292,17 @@
         <Button label="Copy JSON" icon="pi pi-copy" outlined size="small" @click="copyConfigAuditJson" />
         <Button label="Close" size="small" @click="auditOpen = false" />
       </template>
-    </Dialog>
+    </ResponsiveDialog>
 
     <!-- ── Add / Edit requirement dialog ─────────────────────────────── -->
-    <Dialog
+    <ResponsiveDialog
       v-model:visible="dialogOpen"
-      :header="editingReq ? 'Edit requirement' : 'Add coverage requirement'"
-      modal
-      :style="{ width: '380px' }"
+      :header="editingReq ? t('config.coverage.dialogEditTitle') : t('config.coverage.dialogAddTitle')"
+      size="sm"
     >
       <div class="space-y-4 pt-1">
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Day of week</label>
+          <label class="text-sm font-medium text-gray-700">{{ t('config.coverage.fieldDay') }}</label>
           <Select
             v-model="form.day_of_week"
             :options="dayOptions"
@@ -318,7 +314,7 @@
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">From</label>
+            <label class="text-sm font-medium text-gray-700">{{ t('config.coverage.fieldFrom') }}</label>
             <input
               type="time"
               v-model="form.start_time"
@@ -326,7 +322,7 @@
             />
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">To</label>
+            <label class="text-sm font-medium text-gray-700">{{ t('config.coverage.fieldTo') }}</label>
             <input
               type="time"
               v-model="form.end_time"
@@ -335,41 +331,42 @@
           </div>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Minimum staff</label>
+          <label class="text-sm font-medium text-gray-700">{{ t('config.coverage.fieldMinStaff') }}</label>
           <InputNumber v-model="form.min_staff" :min="1" :max="20" showButtons fluid />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">Required role <span class="text-gray-400 font-normal">(optional)</span></label>
+          <label class="text-sm font-medium text-gray-700">{{ t('config.coverage.fieldRole') }} <span class="text-gray-400 font-normal">{{ t('config.coverage.fieldRoleOptional') }}</span></label>
           <Select
             v-model="form.required_role"
-            :options="[{ value: '', label: 'Any role' }, ...optionsStore.jobRoles]"
+            :options="[{ value: '', label: t('config.coverage.anyRoleOption') }, ...optionsStore.jobRoles]"
             option-label="label"
             option-value="value"
             :loading="optionsStore.loading"
             fluid
           />
-          <p class="text-xs text-gray-400">Leave empty to count any assigned employee.</p>
+          <p class="text-xs text-gray-400">{{ t('config.coverage.fieldRoleHint') }}</p>
         </div>
       </div>
 
       <template #footer>
-        <Button label="Cancel" text @click="dialogOpen = false" />
+        <Button :label="t('config.coverage.dialogCancel')" text @click="dialogOpen = false" />
         <Button
-          :label="editingReq ? 'Save' : 'Add'"
+          :label="editingReq ? t('config.coverage.dialogSave') : t('config.coverage.dialogAdd')"
           icon="pi pi-check"
           :loading="store.savingRequirement"
           @click="submitDialog"
         />
       </template>
-    </Dialog>
+    </ResponsiveDialog>
 
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Button    from 'primevue/button'
-import Dialog    from 'primevue/dialog'
+import ResponsiveDialog from '@/components/common/ResponsiveDialog.vue'
 import DatePicker from 'primevue/datepicker'
 import Select    from 'primevue/select'
 import InputText from 'primevue/inputtext'
@@ -378,7 +375,9 @@ import { useStoreConfigStore, type CoverageRequirement } from '../stores/storeCo
 import { usePublicHolidays } from '@/features/schedule/composables/usePublicHolidays'
 import { useStoreContext } from '@/stores/storeContext'
 import { useOptionsStore } from '@/stores/optionsStore'
+import { fmtLocal } from '@/utils/dateUtils'
 
+const { t, locale } = useI18n()
 const store        = useStoreConfigStore()
 const ctx          = useStoreContext()
 const storeId      = computed(() => ctx.storeId)
@@ -489,13 +488,12 @@ async function deleteReq(id: string) {
 // ── Exceptional opening days ───────────────────────────────────────────
 // Load one year ahead so the list covers all upcoming exceptions.
 function todayISO() {
-  const d = new Date()
-  return d.toISOString().split('T')[0]
+  return fmtLocal(new Date())
 }
 function oneYearAheadISO() {
   const d = new Date()
   d.setFullYear(d.getFullYear() + 1)
-  return d.toISOString().split('T')[0]
+  return fmtLocal(d)
 }
 
 // usePublicHolidays expects a week-start ref but we only need the year cache.
@@ -524,7 +522,8 @@ function isSunday(isoDate: string): boolean {
 }
 
 function formatExDate(isoDate: string): string {
-  return new Date(`${isoDate}T00:00:00`).toLocaleDateString('fr-FR', {
+  const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-GB'
+  return new Date(`${isoDate}T00:00:00`).toLocaleDateString(dateLocale, {
     weekday: 'long',
     day:     'numeric',
     month:   'long',

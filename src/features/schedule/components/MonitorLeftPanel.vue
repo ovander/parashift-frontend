@@ -2,9 +2,9 @@
   <aside class="w-72 flex-shrink-0 bg-white border-r flex flex-col h-full overflow-y-auto">
     <div class="p-4 border-b">
       <h3 class="text-sm font-semibold text-gray-800 flex items-center gap-2">
-        <i class="pi pi-chart-line text-brand-500" /> Weekly KPIs
+        <i class="pi pi-chart-line text-brand-500" /> {{ t('schedule.monitor.weeklyKpis') }}
       </h3>
-      <p class="text-xs text-gray-500 mt-0.5">Week of {{ ctx.weekStart }}</p>
+      <p class="text-xs text-gray-500 mt-0.5">{{ t('schedule.monitor.weekOf') }} {{ ctx.weekStart }}</p>
     </div>
 
     <!-- KPI tiles -->
@@ -25,7 +25,7 @@
     <!-- Predictive section -->
     <div class="border-t p-4">
       <div class="flex items-center justify-between mb-3">
-        <h4 class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Next-week risk</h4>
+        <h4 class="text-xs font-semibold text-gray-700 uppercase tracking-wide">{{ t('schedule.monitor.nextWeekRisk') }}</h4>
         <Button
           size="small"
           text
@@ -36,7 +36,7 @@
       </div>
 
       <div v-if="riskFactors.length === 0" class="text-xs text-gray-400 text-center py-4">
-        No risk factors detected
+        {{ t('schedule.monitor.noRiskFactors') }}
       </div>
 
       <div v-else class="space-y-2">
@@ -67,7 +67,7 @@
 
     <!-- Patterns section -->
     <div class="border-t p-4">
-      <h4 class="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Patterns</h4>
+      <h4 class="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">{{ t('schedule.monitor.patterns') }}</h4>
       <div class="space-y-2 text-xs text-gray-600">
         <div class="flex items-center gap-2 p-2 bg-gray-50 rounded">
           <i class="pi pi-calendar text-blue-500" />
@@ -84,11 +84,14 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import { useStoreContext } from '@/stores/storeContext'
 import { useScheduleStore } from '@/features/schedule/stores/scheduleStore'
 import { usePlanStore } from '@/stores/planStore'
+
+const { t } = useI18n()
 
 interface RiskFactor {
   id: string
@@ -107,7 +110,7 @@ const forecastLoading = ref(false)
 const riskFactors = ref<RiskFactor[]>([
   {
     id: '1',
-    title: 'Understaffing risk',
+    title: t('schedule.monitor.understaffingRisk'),
     description: '3 pharmacists have leave requests next week.',
     severity: 'HIGH',
     actionLabel: 'Pre-fill from template',
@@ -115,7 +118,7 @@ const riskFactors = ref<RiskFactor[]>([
   },
   {
     id: '2',
-    title: 'Expiring qualifications',
+    title: t('schedule.monitor.expiringQualifications'),
     description: '2 employees have certifications expiring within 30 days.',
     severity: 'MEDIUM',
   },
@@ -123,7 +126,7 @@ const riskFactors = ref<RiskFactor[]>([
 
 const kpiTiles = computed(() => [
   {
-    label: 'Coverage',
+    label: t('schedule.monitor.coverage'),
     value: coverageRate.value,
     color: coverageRate.value === '—' ? 'text-gray-400' : 'text-green-600',
     trend: '—',
@@ -131,7 +134,7 @@ const kpiTiles = computed(() => [
     trendIcon: 'pi pi-minus',
   },
   {
-    label: 'Overtime h',
+    label: t('schedule.monitor.overtimeHours'),
     value: '—',
     color: 'text-orange-600',
     trend: '—',
@@ -139,7 +142,7 @@ const kpiTiles = computed(() => [
     trendIcon: 'pi pi-minus',
   },
   {
-    label: 'Violations',
+    label: t('schedule.monitor.violations'),
     value: String(violationCount.value),
     color: violationCount.value > 0 ? 'text-red-600' : 'text-green-600',
     trend: '—',
@@ -147,7 +150,7 @@ const kpiTiles = computed(() => [
     trendIcon: 'pi pi-minus',
   },
   {
-    label: 'Adjustments',
+    label: t('schedule.monitor.adjustments'),
     value: String(planStore.plan?.override_log?.length ?? 0),
     color: 'text-blue-600',
     trend: '—',

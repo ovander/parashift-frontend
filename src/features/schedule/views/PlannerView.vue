@@ -8,7 +8,7 @@
       class="flex items-center gap-2 px-4 py-1.5 bg-amber-50 border-b border-amber-200 text-sm text-amber-800"
     >
       <i class="pi pi-calendar text-amber-500 text-base flex-shrink-0" />
-      <span class="font-medium">Jour férié —</span>
+      <span class="font-medium">{{ t('schedule.planner.holidayLabel') }}</span>
       <span>{{ currentHolidayName }}</span>
     </div>
 
@@ -31,14 +31,14 @@
     </div>
 
     <!-- AI panel drawer -->
-    <Drawer v-model:visible="aiPanelOpen" position="right" :style="{ width: '420px' }">
+    <AppDrawer v-model:visible="aiPanelOpen" position="right" size="md">
       <template #header>
         <span class="font-semibold flex items-center gap-2">
-          <i class="pi pi-sparkles text-brand-500" /> AI Assistant
+          <i class="pi pi-sparkles text-brand-500" /> {{ t('schedule.planner.aiAssistant') }}
         </span>
       </template>
       <AIPanel :store-id="ctx.storeId" />
-    </Drawer>
+    </AppDrawer>
 
     <!-- Violation toast -->
     <Toast />
@@ -47,8 +47,9 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import FullCalendar from '@fullcalendar/vue3'
-import Drawer from 'primevue/drawer'
+import AppDrawer from '@/components/common/AppDrawer.vue'
 import Skeleton from 'primevue/skeleton'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
@@ -66,6 +67,7 @@ import ShiftEventContent    from '../components/ShiftEventContent.vue'
 import CoverageAlertBanner  from '@/features/coverage/components/CoverageAlertBanner.vue'
 import AIPanel              from '@/features/ai/components/AIPanel.vue'
 
+const { t }     = useI18n()
 const toast      = useToast()
 const ctx        = useStoreContext()
 const scheduleStore  = useScheduleStore()

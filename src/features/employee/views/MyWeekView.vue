@@ -78,7 +78,7 @@ import SwapInboxCard from '@/features/swap/components/SwapInboxCard.vue'
 import LeaveRequestForm from '@/features/leave/components/LeaveRequestForm.vue'
 import MonthSchedulePdf from '../components/MonthSchedulePdf.vue'
 
-const { t }          = useI18n()
+const { t, locale }  = useI18n()
 const ctx            = useStoreContext()
 const scheduleStore  = useScheduleStore()
 const employeeStore  = useEmployeeStore()
@@ -109,8 +109,9 @@ function localIso(d: Date): string {
 const weekLabel = computed(() => {
   const s = new Date(ctx.weekStart + 'T00:00:00')
   const e = new Date(ctx.weekEnd   + 'T00:00:00')
-  const weekNum = isoWeekNumber(s)
-  return `Week ${weekNum} · ${s.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${e.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+  const weekNum  = isoWeekNumber(s)
+  const dl = locale.value === 'fr' ? 'fr-FR' : 'en-GB'
+  return `${t('schedule.week')} ${weekNum} · ${s.toLocaleDateString(dl, { month: 'short', day: 'numeric' })} – ${e.toLocaleDateString(dl, { month: 'short', day: 'numeric', year: 'numeric' })}`
 })
 
 // ── [DEV] Audit trail ─────────────────────────────────────────────────────────
@@ -193,7 +194,7 @@ const devAuditText = computed(() => {
     const d = new Date(ctx.weekStart + 'T00:00:00')
     d.setDate(d.getDate() + i)
     const iso = localIso(d)
-    const dayLabel = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+    const dayLabel = d.toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'short', month: 'short', day: 'numeric' })
       .padEnd(14)
 
     const leaveType = leaveMap.get(iso) ?? null

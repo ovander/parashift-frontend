@@ -8,10 +8,17 @@
  *
  * PrimeVue components are stubbed to avoid needing a full PrimeVue plugin setup.
  */
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { setActivePinia, createPinia } from 'pinia'
 import LeaveImpactDialog from '../LeaveImpactDialog.vue'
 import type { LeaveRequest, LeaveImpact, LeaveImpactShift } from '@/types'
+
+vi.mock('@/stores/ui', () => ({ useUiStore: () => ({ isMobile: false, showToast: vi.fn() }) }))
+
+beforeEach(() => {
+  setActivePinia(createPinia())
+})
 
 // ── Stub helpers ──────────────────────────────────────────────────────────────
 
@@ -177,7 +184,7 @@ describe('LeaveImpactDialog.vue', () => {
     it('shows leave type and date range in the summary', () => {
       const wrapper = mountDialog({ impact: makeImpact() })
       const text = wrapper.text()
-      expect(text).toContain('vacation')
+      expect(text).toContain('Vacation')
       expect(text).toContain('2026-04-14')
       expect(text).toContain('2026-04-18')
     })

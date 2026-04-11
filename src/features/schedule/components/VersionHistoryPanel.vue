@@ -1,8 +1,8 @@
 <template>
-  <Drawer v-model:visible="visible" position="right" :style="{ width: '380px' }">
+  <AppDrawer v-model:visible="visible" position="right" size="sm">
     <template #header>
       <span class="font-semibold flex items-center gap-2">
-        <i class="pi pi-history text-brand-500" /> Version History
+        <i class="pi pi-history text-brand-500" /> {{ t('schedule.history.title') }}
       </span>
     </template>
 
@@ -20,19 +20,19 @@
       >
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-sm font-medium">Snapshot {{ snapshots.length - i }}</p>
+            <p class="text-sm font-medium">{{ t('schedule.history.snapshot') }} {{ snapshots.length - i }}</p>
             <p class="text-xs text-gray-500 mt-0.5">{{ formatDate(snap.taken_at) }}</p>
           </div>
           <div class="text-right text-xs text-gray-600">
-            <div>{{ snap.shift_count }} shifts</div>
-            <div>{{ Math.round(snap.coverage_rate * 100) }}% covered</div>
+            <div>{{ snap.shift_count }} {{ t('schedule.history.shifts') }}</div>
+            <div>{{ Math.round(snap.coverage_rate * 100) }}% {{ t('schedule.history.covered') }}</div>
           </div>
         </div>
       </div>
     </div>
 
     <div v-if="overrides.length" class="border-t mt-4 p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Override Log</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{{ t('schedule.history.overrideLog') }}</p>
       <div class="space-y-2">
         <div v-for="ov in overrides" :key="ov.timestamp" class="text-xs bg-orange-50 rounded p-2">
           <p class="font-medium text-orange-800">{{ ov.reason }}</p>
@@ -44,26 +44,27 @@
     <template #footer>
       <div class="flex justify-between w-full">
         <Button
-          label="Close"
+          :label="t('common.close')"
           severity="secondary"
           text
           @click="visible = false"
         />
         <Button
           v-if="planStore.canRollback && selectedIdx > 0"
-          label="Rollback to this"
+          :label="t('schedule.history.rollbackButton')"
           severity="warning"
           icon="pi pi-undo"
           @click="doRollback"
         />
       </div>
     </template>
-  </Drawer>
+  </AppDrawer>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import Drawer from 'primevue/drawer'
+import { useI18n } from 'vue-i18n'
+import AppDrawer from '@/components/common/AppDrawer.vue'
 import Button from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
 import { usePlanStore } from '@/stores/planStore'
@@ -71,6 +72,7 @@ import { useStoreContext } from '@/stores/storeContext'
 import { useToast } from 'primevue/usetoast'
 import type { PlanSnapshot, PlanOverride } from '@/types'
 
+const { t } = useI18n()
 const visible = defineModel<boolean>('visible', { default: false })
 
 const planStore = usePlanStore()

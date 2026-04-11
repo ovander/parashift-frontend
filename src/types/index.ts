@@ -242,16 +242,20 @@ export interface LeaveRequest {
 
 export interface SwapRequest {
   id:                  string
-  tenant_id:           string
+  tenant_id?:          string
+  store_id?:           string
   requester_id:        string
+  /** Populated when the API eager-loads the requester profile. */
+  requester?:          Pick<Employee, 'id' | 'name' | 'email' | 'position' | 'job_role' | 'store_id' | 'contract_hours_per_week' | 'created_at' | 'updated_at'>
   target_employee_id?: string
-  shift_instance_id:   string
+  shift_instance_id?:  string
+  shift_id?:           string
   target_shift_id?:    string
   status:              SwapStatus
   note?:               string
   reviewed_by?:        string
   created_at:          ISODateTime
-  updated_at:          ISODateTime
+  updated_at?:         ISODateTime
 }
 
 // Template is an admin/manager-only entity used to seed shift instances.
