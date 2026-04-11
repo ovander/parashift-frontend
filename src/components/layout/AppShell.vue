@@ -82,7 +82,7 @@
               v-for="lang in SUPPORTED_LOCALES"
               :key="lang"
               class="text-xs px-1 py-0.5 rounded transition-colors leading-none"
-              :class="locale.value === lang
+              :class="locale === lang
                 ? 'bg-brand-100 text-brand-700 font-semibold'
                 : 'text-gray-400 hover:text-gray-600'"
               :data-testid="`lang-${lang}`"

@@ -12,7 +12,7 @@
       <div class="bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 flex items-center gap-2 text-sm">
         <i class="pi pi-exclamation-circle text-orange-500" />
         <span class="text-orange-800">
-          {{ t('swap.pendingCount', swapStore.pendingIncoming.length, { n: swapStore.pendingIncoming.length }) }}
+          {{ t('swap.pendingCount', swapStore.pendingIncoming.length, { named: { n: swapStore.pendingIncoming.length } }) }}
         </span>
         <button class="ml-auto text-orange-600 font-medium text-xs" @click="mobileTab = 'requests'">
           {{ t('swap.review') }}

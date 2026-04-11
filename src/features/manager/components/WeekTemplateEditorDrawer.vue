@@ -30,7 +30,7 @@
         <div class="flex items-center gap-3 px-4 py-2.5 bg-blue-50">
           <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-blue-200 text-blue-800">A</span>
           <span class="text-sm font-semibold text-blue-800">{{ t('manager.weekTemplate.weekA') }}</span>
-          <span class="text-xs text-gray-400 ml-1">{{ t('manager.weekTemplate.shiftCount', shiftsFor('A').length, { n: shiftsFor('A').length }) }}</span>
+          <span class="text-xs text-gray-400 ml-1">{{ t('manager.weekTemplate.shiftCount', shiftsFor('A').length, { named: { n: shiftsFor('A').length } }) }}</span>
           <span v-if="totalHours('A') > 0" class="ml-auto text-xs font-medium text-blue-600">{{ t('manager.weekTemplate.hoursPerWeek', { n: totalHours('A') }) }}</span>
         </div>
         <div class="bg-white">
@@ -88,7 +88,7 @@
         <div class="flex items-center gap-3 px-4 py-2.5 bg-amber-50">
           <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold bg-amber-200 text-amber-800">B</span>
           <span class="text-sm font-semibold text-amber-800">{{ t('manager.weekTemplate.weekB') }}</span>
-          <span class="text-xs text-gray-400 ml-1">{{ t('manager.weekTemplate.shiftCount', shiftsFor('B').length, { n: shiftsFor('B').length }) }}</span>
+          <span class="text-xs text-gray-400 ml-1">{{ t('manager.weekTemplate.shiftCount', shiftsFor('B').length, { named: { n: shiftsFor('B').length } }) }}</span>
           <span v-if="totalHours('B') > 0" class="ml-auto text-xs font-medium text-amber-600">{{ t('manager.weekTemplate.hoursPerWeek', { n: totalHours('B') }) }}</span>
         </div>
         <div class="bg-white">

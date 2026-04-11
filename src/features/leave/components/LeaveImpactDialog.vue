@@ -36,7 +36,7 @@
           <p class="font-semibold text-gray-900 text-sm">{{ employeeName }}</p>
           <p class="text-xs text-gray-500 capitalize mt-0.5">
             {{ t(`leave.type.${leave.type}`, leave.type) }} &nbsp;·&nbsp; {{ leave.start_date }} – {{ leave.end_date }}
-            ({{ t('leave.dayCount', dayCount, { count: dayCount }) }})
+            ({{ t('leave.dayCount', dayCount, { named: { count: dayCount } }) }})
           </p>
           <p v-if="leave.reason" class="text-xs text-gray-400 italic mt-0.5 truncate">
             "{{ leave.reason }}"

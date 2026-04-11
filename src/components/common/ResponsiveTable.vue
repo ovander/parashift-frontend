@@ -78,7 +78,11 @@ function slotName(header: string): string {
 }
 
 /** Check whether the parent provided a custom body slot for this column. */
-const slots = defineSlots<Record<string, (props: { data: unknown }) => unknown>>()
+const slots = defineSlots<{
+  [key: string]: ((props: { data: unknown }) => unknown) | (() => unknown) | undefined
+  empty?: () => unknown
+  expansion?: (props: Record<string, unknown>) => unknown
+}>()
 function hasSlot(col: TableColumn): boolean {
   return slotName(col.header) in slots
 }

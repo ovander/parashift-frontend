@@ -43,7 +43,7 @@
         <div class="px-5 pt-4 flex items-center gap-2 text-sm text-gray-500">
           <i class="pi pi-users text-gray-400" />
           <span class="font-semibold text-gray-700">{{ t('manager.team.cardHeader') }}</span>
-          <span>· {{ t('manager.team.employeeCount', total, { n: total }) }}</span>
+          <span>· {{ t('manager.team.employeeCount', total, { named: { n: total } }) }}</span>
         </div>
       </template>
       <template #content>

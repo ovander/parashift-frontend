@@ -284,7 +284,7 @@ const scheduleStore = useScheduleStore()
 const employeeStore = useEmployeeStore()
 const { layers } = usePlannerLayers()
 
-const { isDesktop, isTabletUp } = useBreakpoint()
+const { isDesktop } = useBreakpoint()
 
 const mode = ref<ManagerMode>('operate')
 const aiPanelOpen = ref(false)

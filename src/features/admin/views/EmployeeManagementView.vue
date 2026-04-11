@@ -34,7 +34,7 @@
         <div class="px-5 pt-4 flex items-center gap-2">
           <i class="pi pi-building text-gray-400 text-sm" />
           <span class="text-sm font-semibold text-gray-700">{{ selectedStoreName }}</span>
-          <span class="text-xs text-gray-400">· {{ t('admin.empMgmt.employeeCount', employees.length, { count: employees.length }) }}</span>
+          <span class="text-xs text-gray-400">· {{ t('admin.empMgmt.employeeCount', employees.length, { named: { count: employees.length } }) }}</span>
         </div>
       </template>
       <template #content>
