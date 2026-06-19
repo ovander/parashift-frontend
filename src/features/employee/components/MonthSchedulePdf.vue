@@ -96,20 +96,20 @@
           <div
             v-for="day in calendarDays"
             :key="day.iso"
-            class="min-h-[80px] p-1.5 border-r border-b border-gray-200"
+            class="min-h-[80px] p-1.5 border-r border-b border-gray-200 flex flex-col"
             :class="{
               'bg-gray-200': day.isHoliday,
               'bg-gray-100 ring-1 ring-inset ring-gray-800': day.isToday,
-              'bg-gray-50': day.isWeekend && !day.isHoliday && !day.isToday,
-              'bg-white': !day.isWeekend && !day.isHoliday && !day.isToday,
+              'bg-gray-50': day.isOff && !day.isHoliday && !day.isToday,
+              'bg-white': !day.isOff && !day.isHoliday && !day.isToday,
             }"
           >
             <!-- Day number -->
             <span
               class="text-[11px] font-bold block mb-0.5"
               :class="{
-                'text-gray-900': day.isToday || !day.isWeekend,
-                'text-gray-500': day.isWeekend && !day.isToday,
+                'text-gray-900': day.isToday || !day.isOff,
+                'text-gray-500': day.isOff && !day.isToday,
               }"
             >{{ day.dayNum }}</span>
 
@@ -120,20 +120,24 @@
               </span>
             </div>
 
-            <!-- Assigned shifts (time only, no role) -->
-            <div v-if="day.shifts.length" class="space-y-0.5">
+            <!-- Timeline (07:00 → 21:00): shift sits at its start time, height = duration -->
+            <div class="relative flex-1 min-h-[44px]" :style="timelineBg">
               <div
                 v-for="s in day.shifts"
                 :key="s.id"
-                class="text-[10px] font-semibold leading-tight rounded px-1 py-0.5 bg-white border border-gray-900 text-gray-900"
+                class="absolute inset-x-0 flex items-center justify-between overflow-hidden text-[9px] font-semibold leading-none rounded px-1 bg-white border border-gray-900 text-gray-900"
+                :style="{ top: shiftBand(s.start_time, s.end_time).top + '%', height: `max(11px, ${shiftBand(s.start_time, s.end_time).height}%)` }"
               >
-                {{ s.start_time }}–{{ s.end_time }}
+                <span>{{ s.start_time }}–{{ s.end_time }}</span>
               </div>
-            </div>
 
-            <!-- Leave -->
-            <div v-else-if="day.onLeave" class="text-[9px] text-gray-900 bg-gray-100 border border-gray-300 rounded px-1 py-0.5">
-              {{ t('schedule.leave') }}
+              <!-- Leave -->
+              <div
+                v-if="!day.shifts.length && day.onLeave"
+                class="text-[9px] text-gray-900 bg-gray-100 border border-gray-300 rounded px-1 py-0.5"
+              >
+                {{ t('schedule.leave') }}
+              </div>
             </div>
           </div>
 
@@ -320,6 +324,33 @@ watch([open, selectedMonth], () => { if (open.value) loadMonth() })
 
 const todayIso = localIso(new Date())
 
+// ── Day timeline mapping ──────────────────────────────────────────────────────
+// Each day cell is a vertical time axis from DAY_START to DAY_END. A shift is
+// placed at its start time with a height proportional to its duration, so the
+// reader can see morning / afternoon / evening at a glance (blank = free time).
+const DAY_START_MIN = 7 * 60   // 07:00 at the top of the cell
+const DAY_END_MIN   = 21 * 60  // 21:00 at the bottom
+const DAY_SPAN_MIN  = DAY_END_MIN - DAY_START_MIN
+
+function toMin(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map(Number)
+  return h * 60 + m
+}
+
+/** Vertical band (% from top + % height, clamped to the visible window) for a shift. */
+function shiftBand(start: string, end: string): { top: number; height: number } {
+  const s = Math.max(0, Math.min(100, ((toMin(start) - DAY_START_MIN) / DAY_SPAN_MIN) * 100))
+  const e = Math.max(0, Math.min(100, ((toMin(end)   - DAY_START_MIN) / DAY_SPAN_MIN) * 100))
+  return { top: s, height: Math.max(0, e - s) }
+}
+
+// Faint hourly gridlines (one band every 2h across the 14h window) drawn behind shifts.
+const timelineBg = {
+  backgroundImage:
+    'repeating-linear-gradient(to bottom, #eef0f2 0, #eef0f2 1px, transparent 1px, transparent calc(100% / 7))',
+}
+
+
 const calendarDays = computed(() => {
   const { year, month } = parsedMonth.value
   const userId = auth.user?.id
@@ -338,7 +369,8 @@ const calendarDays = computed(() => {
       iso,
       dayNum:      i + 1,
       isToday:     iso === todayIso,
-      isWeekend:   dow === 0 || dow === 6,
+      // Saturday is a regular working day; only Sunday is off.
+      isOff:       dow === 0,
       isHoliday:   holidayMap.value.has(iso),
       holidayName: holidayMap.value.get(iso) ?? null,
       shifts:      myShifts,
@@ -507,29 +539,32 @@ function printSchedule() {
 
     const cls = [
       'cell',
-      day.isHoliday                               ? 'cell-holiday' : '',
-      day.isToday                                 ? 'cell-today'   : '',
-      day.isWeekend && !day.isHoliday && !day.isToday ? 'cell-weekend' : '',
+      day.isHoliday                            ? 'cell-holiday' : '',
+      day.isToday                              ? 'cell-today'   : '',
+      day.isOff && !day.isHoliday && !day.isToday ? 'cell-off'  : '',
     ].filter(Boolean).join(' ')
 
-    const numCls = day.isToday ? 'dn dn-today' : day.isWeekend ? 'dn dn-we' : 'dn'
+    const numCls = day.isToday ? 'dn dn-today' : day.isOff ? 'dn dn-off' : 'dn'
 
     const badge  = day.isHoliday
       ? `<div class="hbadge">${day.holidayName}</div>` : ''
 
-    const chips  = day.shifts.map(s =>
-      `<div class="shift">
+    // Each shift placed at its start time, height proportional to duration.
+    const chips  = day.shifts.map(s => {
+      const { top, height } = shiftBand(s.start_time, s.end_time)
+      return `<div class="shift" style="top:${top.toFixed(1)}%;height:max(9px,${height.toFixed(1)}%)">
         <span class="st">${s.start_time}–${s.end_time}</span>
         <span class="dur">${duration(s.start_time, s.end_time)}</span>
       </div>`
-    ).join('')
+    }).join('')
 
     const leave = !day.shifts.length && day.onLeave
       ? `<div class="leave">${t('schedule.leave')}</div>` : ''
 
     return `<div class="${cls}">
       <span class="${numCls}">${day.dayNum}</span>
-      ${badge}${chips}${leave}
+      ${badge}
+      <div class="timeline">${chips}${leave}</div>
     </div>`
   }
 
@@ -593,10 +628,10 @@ function printSchedule() {
     .meta  { font-size: 7pt; color: #6b7280; }
 
     /* ── Grid columns ── */
-    /* 36px week-num + 5× weekday (1fr) + 2× weekend (0.65fr) */
+    /* 36px week-num + 6× working day Mon–Sat (1fr) + Sunday (0.65fr) */
     .col-headers, .week-row {
       display: grid;
-      grid-template-columns: 36px 1fr 1fr 1fr 1fr 1fr 0.65fr 0.65fr;
+      grid-template-columns: 36px 1fr 1fr 1fr 1fr 1fr 1fr 0.65fr;
       width: 100%;
     }
     .col-headers { margin-bottom: 1px; }
@@ -632,12 +667,13 @@ function printSchedule() {
 
     /* ── Day cells ── */
     .cell {
+      display: flex; flex-direction: column;
       min-height: 0; padding: 3px 4px;
       border-left: 1px solid #e5e7eb;
       background: #fff;
     }
     .cell-empty   { background: #f9fafb; }
-    .cell-weekend { background: #f3f4f6; }
+    .cell-off     { background: #f3f4f6; }
     .cell-holiday { background: #e5e7eb; }
     .cell-today   { background: #f3f4f6; box-shadow: inset 3px 0 0 #111827; }
 
@@ -647,7 +683,15 @@ function printSchedule() {
       color: #111827; margin-bottom: 2px; line-height: 1;
     }
     .dn-today { color: #111827; }
-    .dn-we    { color: #6b7280; }
+    .dn-off   { color: #6b7280; }
+
+    /* ── Day timeline (07:00 top → 21:00 bottom) ── */
+    .timeline {
+      position: relative; flex: 1 1 auto; min-height: 0; margin-top: 1px;
+      background-image: repeating-linear-gradient(
+        to bottom, #eef0f2 0, #eef0f2 0.3pt, transparent 0.3pt, transparent calc(100% / 7)
+      );
+    }
 
     /* ── Holiday badge ── */
     .hbadge {
@@ -658,13 +702,15 @@ function printSchedule() {
       max-width: 100%;
     }
 
-    /* ── Shift chips ── */
+    /* ── Shift chips (absolutely placed on the day timeline) ── */
     .shift {
+      position: absolute; left: 0; right: 0;
       display: flex; justify-content: space-between; align-items: center;
-      border-radius: 3px; padding: 1px 4px; margin-top: 2px;
-      font-size: 7.5pt; font-weight: 600; line-height: 1.3;
+      border-radius: 3px; padding: 0 4px;
+      font-size: 7pt; font-weight: 600; line-height: 1.1;
       background: #fff; color: #111827;
       border: 1px solid #111827; border-left: 3px solid #111827;
+      overflow: hidden;
     }
     .dur { font-size: 6pt; font-weight: 400; color: #4b5563; }
 
@@ -721,8 +767,8 @@ function printSchedule() {
 
   <div class="col-headers">
     <div class="ch-wk"></div>
-    ${weekDayLabels.value.slice(0, 5).map(d => `<div class="ch-day">${d}</div>`).join('\n    ')}
-    ${weekDayLabels.value.slice(5).map(d => `<div class="ch-day we">${d}</div>`).join('\n    ')}
+    ${weekDayLabels.value.slice(0, 6).map(d => `<div class="ch-day">${d}</div>`).join('\n    ')}
+    ${weekDayLabels.value.slice(6).map(d => `<div class="ch-day we">${d}</div>`).join('\n    ')}
   </div>
 
   <div class="calendar">
