@@ -23,7 +23,6 @@
     "@fullcalendar/resource-timegrid": "^6.1.17",
     "@fullcalendar/vue3": "^6.1.17",
     "@primevue/themes": "^4.5.4",
-    "@rollup/rollup-linux-arm64-gnu": "^4.60.1",
     "@vueuse/core": "^14.2.1",
     "axios": "^1.13.6",
     "pinia": "^3.0.4",
