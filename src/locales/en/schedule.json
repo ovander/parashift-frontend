@@ -28,6 +28,7 @@
   "weekPrefix": "W",
   "scheduleTitle": "Schedule",
   "totalLabel": "Total:",
+  "notesLabel": "Notes",
   "legendMorning": "Morning (<12h)",
   "legendAfternoon": "Afternoon (12–16h)",
   "legendEvening": "Evening (≥16h)",

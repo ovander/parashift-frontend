@@ -98,8 +98,8 @@
             :key="day.iso"
             class="min-h-[80px] p-1.5 border-r border-b border-gray-200"
             :class="{
-              'bg-amber-50': day.isHoliday,
-              'bg-blue-50 ring-1 ring-inset ring-blue-400': day.isToday,
+              'bg-gray-200': day.isHoliday,
+              'bg-gray-100 ring-1 ring-inset ring-gray-800': day.isToday,
               'bg-gray-50': day.isWeekend && !day.isHoliday && !day.isToday,
               'bg-white': !day.isWeekend && !day.isHoliday && !day.isToday,
             }"
@@ -108,16 +108,15 @@
             <span
               class="text-[11px] font-bold block mb-0.5"
               :class="{
-                'text-blue-600': day.isToday,
-                'text-gray-400': day.isWeekend && !day.isToday,
-                'text-gray-700': !day.isWeekend && !day.isToday,
+                'text-gray-900': day.isToday || !day.isWeekend,
+                'text-gray-500': day.isWeekend && !day.isToday,
               }"
             >{{ day.dayNum }}</span>
 
             <!-- Holiday badge -->
             <div v-if="day.isHoliday" class="mb-1">
-              <span class="text-[8px] font-semibold text-amber-700 bg-amber-100 rounded px-1 py-0.5 leading-tight block truncate">
-                🎉 {{ day.holidayName }}
+              <span class="text-[8px] font-semibold text-gray-900 bg-gray-300 rounded px-1 py-0.5 leading-tight block truncate">
+                {{ day.holidayName }}
               </span>
             </div>
 
@@ -126,15 +125,15 @@
               <div
                 v-for="s in day.shifts"
                 :key="s.id"
-                class="text-[10px] font-semibold leading-tight rounded px-1 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-800"
+                class="text-[10px] font-semibold leading-tight rounded px-1 py-0.5 bg-white border border-gray-900 text-gray-900"
               >
                 {{ s.start_time }}–{{ s.end_time }}
               </div>
             </div>
 
             <!-- Leave -->
-            <div v-else-if="day.onLeave" class="text-[9px] text-orange-600 bg-orange-50 border border-orange-200 rounded px-1 py-0.5">
-              🌴 {{ t('schedule.leave') }}
+            <div v-else-if="day.onLeave" class="text-[9px] text-gray-900 bg-gray-100 border border-gray-300 rounded px-1 py-0.5">
+              {{ t('schedule.leave') }}
             </div>
           </div>
 
@@ -166,7 +165,7 @@ import { useApi } from '@/composables/useApi'
 import { useAuthStore } from '@/stores/auth'
 import { useStoreContext } from '@/stores/storeContext'
 import type { ShiftInstance, Assignment } from '@/types'
-import { icsDateTime, icsEscape, icsFold, duration, shiftColor, isoWeek } from '../utils/icsUtils'
+import { icsDateTime, icsEscape, icsFold, duration, isoWeek } from '../utils/icsUtils'
 
 const { t, locale } = useI18n()
 const auth = useAuthStore()
@@ -516,17 +515,17 @@ function printSchedule() {
     const numCls = day.isToday ? 'dn dn-today' : day.isWeekend ? 'dn dn-we' : 'dn'
 
     const badge  = day.isHoliday
-      ? `<div class="hbadge">🎉 ${day.holidayName}</div>` : ''
+      ? `<div class="hbadge">${day.holidayName}</div>` : ''
 
     const chips  = day.shifts.map(s =>
-      `<div class="shift ${shiftColor(s.start_time)}">
+      `<div class="shift">
         <span class="st">${s.start_time}–${s.end_time}</span>
         <span class="dur">${duration(s.start_time, s.end_time)}</span>
       </div>`
     ).join('')
 
     const leave = !day.shifts.length && day.onLeave
-      ? `<div class="leave">🌴 ${t('schedule.leave')}</div>` : ''
+      ? `<div class="leave">${t('schedule.leave')}</div>` : ''
 
     return `<div class="${cls}">
       <span class="${numCls}">${day.dayNum}</span>
@@ -569,11 +568,13 @@ function printSchedule() {
   <style>
     @page { size: A4 landscape; margin: 8mm 10mm; }
     *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
     html { width: 277mm; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       font-size: 7.5pt; margin: 0; padding: 0;
       color: #111827;
+      display: flex; flex-direction: column;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -582,14 +583,14 @@ function printSchedule() {
     .header {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 7px; padding-bottom: 6px;
-      border-bottom: 2.5px solid #4f46e5;
+      border-bottom: 2.5px solid #111827;
     }
     .header-left { display: flex; align-items: baseline; gap: 8px; }
     .name  { font-size: 13pt; font-weight: 800; color: #111827; }
-    .role  { font-size: 8pt; color: #6b7280; font-weight: 400; }
-    .dot   { color: #d1d5db; }
-    .month { font-size: 11pt; font-weight: 700; color: #4f46e5; text-transform: capitalize; }
-    .meta  { font-size: 7pt; color: #9ca3af; }
+    .role  { font-size: 8pt; color: #4b5563; font-weight: 400; }
+    .dot   { color: #9ca3af; }
+    .month { font-size: 11pt; font-weight: 700; color: #111827; text-transform: capitalize; }
+    .meta  { font-size: 7pt; color: #6b7280; }
 
     /* ── Grid columns ── */
     /* 36px week-num + 5× weekday (1fr) + 2× weekend (0.65fr) */
@@ -605,50 +606,53 @@ function printSchedule() {
     .ch-day {
       text-align: center; font-size: 7pt; font-weight: 700;
       text-transform: uppercase; letter-spacing: .06em;
-      color: #fff; background: #4f46e5;
-      padding: 3px 2px; border-left: 1px solid #6366f1;
+      color: #fff; background: #111827;
+      padding: 3px 2px; border-left: 1px solid #374151;
     }
     .ch-day:first-of-type { border-left: none; }
-    .ch-day.we { background: #818cf8; }
+    .ch-day.we { background: #6b7280; }
 
-    /* ── Week row ── */
-    .week-row { border-top: 1px solid #e5e7eb; }
+    /* ── Calendar (fills remaining page height) ── */
+    .calendar { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+
+    /* ── Week row (rows share the available height equally) ── */
+    .week-row { flex: 1 1 0; border-top: 1px solid #e5e7eb; }
     .week-row:last-child { border-bottom: 1px solid #e5e7eb; }
 
     /* ── Week number column ── */
     .wk-num {
       display: flex; flex-direction: column; align-items: center;
       justify-content: flex-start; padding-top: 4px;
-      font-size: 6.5pt; font-weight: 700; color: #9ca3af;
-      border-right: 2px solid #e5e7eb;
-      background: #fafafa;
+      font-size: 6.5pt; font-weight: 700; color: #6b7280;
+      border-right: 2px solid #d1d5db;
+      background: #f3f4f6;
       gap: 2px;
     }
-    .wk-h { font-size: 6pt; color: #c4b5fd; font-weight: 600; }
+    .wk-h { font-size: 6pt; color: #6b7280; font-weight: 600; }
 
     /* ── Day cells ── */
     .cell {
-      min-height: 68px; padding: 3px 4px;
+      min-height: 0; padding: 3px 4px;
       border-left: 1px solid #e5e7eb;
       background: #fff;
     }
-    .cell-empty   { background: #fafafa; }
-    .cell-weekend { background: #f8f8fc; }
-    .cell-holiday { background: #fffbeb; }
-    .cell-today   { background: #eef2ff; box-shadow: inset 2px 0 0 #4f46e5; }
+    .cell-empty   { background: #f9fafb; }
+    .cell-weekend { background: #f3f4f6; }
+    .cell-holiday { background: #e5e7eb; }
+    .cell-today   { background: #f3f4f6; box-shadow: inset 3px 0 0 #111827; }
 
     /* ── Day number ── */
     .dn {
       display: block; font-size: 8.5pt; font-weight: 700;
-      color: #374151; margin-bottom: 2px; line-height: 1;
+      color: #111827; margin-bottom: 2px; line-height: 1;
     }
-    .dn-today { color: #4f46e5; }
-    .dn-we    { color: #9ca3af; }
+    .dn-today { color: #111827; }
+    .dn-we    { color: #6b7280; }
 
     /* ── Holiday badge ── */
     .hbadge {
-      font-size: 6pt; font-weight: 600; color: #92400e;
-      background: #fef3c7; border-radius: 2px;
+      font-size: 6pt; font-weight: 600; color: #111827;
+      background: #d1d5db; border-radius: 2px;
       padding: 1px 3px; margin-bottom: 2px;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       max-width: 100%;
@@ -659,37 +663,48 @@ function printSchedule() {
       display: flex; justify-content: space-between; align-items: center;
       border-radius: 3px; padding: 1px 4px; margin-top: 2px;
       font-size: 7.5pt; font-weight: 600; line-height: 1.3;
-      border-left: 3px solid;
+      background: #fff; color: #111827;
+      border: 1px solid #111827; border-left: 3px solid #111827;
     }
-    .dur { font-size: 6pt; font-weight: 400; opacity: .75; }
-    /* Morning  < 12h — indigo */
-    .shift-am  { background: #eef2ff; border-color: #4f46e5; color: #3730a3; }
-    /* Afternoon 12–16h — teal */
-    .shift-pm  { background: #f0fdf4; border-color: #10b981; color: #065f46; }
-    /* Evening  ≥ 16h — violet */
-    .shift-eve { background: #f5f3ff; border-color: #7c3aed; color: #5b21b6; }
+    .dur { font-size: 6pt; font-weight: 400; color: #4b5563; }
 
     /* ── Leave ── */
     .leave {
-      font-size: 6.5pt; color: #c2410c;
-      background: #fff7ed; border-radius: 3px;
+      font-size: 6.5pt; color: #111827;
+      background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 3px;
       padding: 1px 4px; margin-top: 2px;
+    }
+
+    /* ── Notes / annotation area ── */
+    .notes {
+      flex: 0 0 auto;
+      margin-top: 6px;
+      height: 24mm;
+      border: 1px solid #9ca3af; border-radius: 3px;
+      padding: 3px 6px;
+    }
+    .notes-label {
+      font-size: 6.5pt; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em;
+      color: #6b7280;
+    }
+    .notes-lines {
+      margin-top: 4px;
+      background-image: repeating-linear-gradient(
+        to bottom, transparent 0, transparent 7mm, #e5e7eb 7mm, #e5e7eb calc(7mm + 0.4pt)
+      );
+      height: 17mm;
     }
 
     /* ── Footer ── */
     .footer {
+      flex: 0 0 auto;
       margin-top: 6px; padding-top: 5px;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid #d1d5db;
       display: flex; gap: 20px; align-items: center;
     }
-    .footer-stat { font-size: 7.5pt; color: #6b7280; }
+    .footer-stat { font-size: 7.5pt; color: #374151; }
     .footer-stat strong { color: #111827; font-size: 9pt; }
-    .legend { display: flex; gap: 10px; margin-left: auto; }
-    .leg-item { display: flex; align-items: center; gap: 3px; font-size: 6.5pt; color: #6b7280; }
-    .leg-dot { width: 8px; height: 8px; border-radius: 2px; border-left: 3px solid; }
-    .leg-am  { background: #eef2ff; border-color: #4f46e5; }
-    .leg-pm  { background: #f0fdf4; border-color: #10b981; }
-    .leg-eve { background: #f5f3ff; border-color: #7c3aed; }
   </style>
 </head>
 <body>
@@ -710,16 +725,18 @@ function printSchedule() {
     ${weekDayLabels.value.slice(5).map(d => `<div class="ch-day we">${d}</div>`).join('\n    ')}
   </div>
 
-  ${rowsHtml}
+  <div class="calendar">
+    ${rowsHtml}
+  </div>
+
+  <div class="notes">
+    <span class="notes-label">${t('schedule.notesLabel')}</span>
+    <div class="notes-lines"></div>
+  </div>
 
   <div class="footer">
     <div class="footer-stat">${t('schedule.totalLabel')} <strong>${totLabel}</strong></div>
     <div class="footer-stat"><strong>${nShifts}</strong> ${t('schedule.shifts', nShifts)}</div>
-    <div class="legend">
-      <div class="leg-item"><div class="leg-dot leg-am"></div> ${t('schedule.legendMorning')}</div>
-      <div class="leg-item"><div class="leg-dot leg-pm"></div> ${t('schedule.legendAfternoon')}</div>
-      <div class="leg-item"><div class="leg-dot leg-eve"></div> ${t('schedule.legendEvening')}</div>
-    </div>
   </div>
 </body>
 </html>`

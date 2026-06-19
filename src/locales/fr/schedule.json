@@ -28,6 +28,7 @@
   "weekPrefix": "S",
   "scheduleTitle": "Planning",
   "totalLabel": "Total :",
+  "notesLabel": "Notes",
   "legendMorning": "Matin (<12h)",
   "legendAfternoon": "Après-midi (12–16h)",
   "legendEvening": "Soir (≥16h)",
