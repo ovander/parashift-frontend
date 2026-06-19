@@ -115,7 +115,7 @@
             <!-- Morning half -->
             <div class="flex-1 min-h-0 pt-px">
               <div
-                v-for="s in day.shifts.filter((x) => x.start_time < NOON)"
+                v-for="s in day.shifts.filter((x) => isMorning(x.start_time, x.end_time))"
                 :key="s.id"
                 class="text-[11px] font-bold text-gray-900 leading-tight"
               >
@@ -130,7 +130,7 @@
             <!-- Afternoon half -->
             <div class="flex-1 min-h-0 border-t border-dashed border-gray-300 mt-px pt-px">
               <div
-                v-for="s in day.shifts.filter((x) => x.start_time >= NOON)"
+                v-for="s in day.shifts.filter((x) => !isMorning(x.start_time, x.end_time))"
                 :key="s.id"
                 class="text-[11px] font-bold text-gray-900 leading-tight"
               >
@@ -323,8 +323,16 @@ watch([open, selectedMonth], () => { if (open.value) loadMonth() })
 
 const todayIso = localIso(new Date())
 
-// Morning / afternoon split point. HH:MM strings compare correctly as text.
-const NOON = '12:00'
+// Classify a shift as morning or afternoon by its midpoint (not its start), so
+// a shift that merely starts late-morning but runs all afternoon
+// (e.g. 11:45–19:45) is correctly placed in the afternoon zone.
+function isMorning(start: string, end: string): boolean {
+  const toMin = (x: string) => {
+    const [h, m] = x.split(':').map(Number)
+    return h * 60 + m
+  }
+  return (toMin(start) + toMin(end)) / 2 < 12 * 60
+}
 
 
 const calendarDays = computed(() => {
@@ -509,9 +517,9 @@ function printSchedule() {
     const hol = day.isHoliday
       ? `<div class="hol">${day.holidayName}</div>` : ''
 
-    // Split shifts into morning (starts before noon) and afternoon zones.
-    const am = day.shifts.filter(s => s.start_time < NOON).map(chip).join('')
-    const pm = day.shifts.filter(s => s.start_time >= NOON).map(chip).join('')
+    // Split shifts into morning / afternoon zones by their midpoint.
+    const am = day.shifts.filter(s => isMorning(s.start_time, s.end_time)).map(chip).join('')
+    const pm = day.shifts.filter(s => !isMorning(s.start_time, s.end_time)).map(chip).join('')
 
     const lv = !day.shifts.length && day.onLeave
       ? `<div class="lv">${t('schedule.leave')}</div>` : ''
