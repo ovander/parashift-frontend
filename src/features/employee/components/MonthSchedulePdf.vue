@@ -73,70 +73,69 @@
         </div>
 
         <!-- Day-of-week header row -->
-        <div class="grid grid-cols-7 w-full mb-px">
+        <div class="grid w-full mb-1" style="grid-template-columns: repeat(6, 1fr) 0.7fr">
           <div
-            v-for="label in weekDayLabels"
+            v-for="(label, i) in weekDayLabels"
             :key="label"
-            class="text-center text-[10px] font-semibold uppercase tracking-wider text-gray-400 py-1 bg-gray-50 border border-gray-200"
+            class="text-[10px] font-semibold uppercase tracking-wider pb-1 px-1 border-b-2 border-gray-900"
+            :class="i === 6 ? 'text-gray-400' : 'text-gray-500'"
           >
             {{ label }}
           </div>
         </div>
 
-        <!-- Calendar grid -->
-        <div class="grid grid-cols-7 w-full border-l border-t border-gray-200">
+        <!-- Calendar grid (minimalist: hairlines, big day numbers, plain shift times) -->
+        <div class="grid w-full" style="grid-template-columns: repeat(6, 1fr) 0.7fr">
           <!-- Leading empty cells -->
           <div
             v-for="i in leadingBlanks"
             :key="`b${i}`"
-            class="min-h-[80px] border-r border-b border-gray-200 bg-gray-50"
+            class="min-h-[84px] border-l border-b border-gray-300 bg-gray-50"
           />
 
           <!-- Day cells -->
           <div
             v-for="day in calendarDays"
             :key="day.iso"
-            class="min-h-[80px] p-1.5 border-r border-b border-gray-200 flex flex-col"
-            :class="{
-              'bg-gray-200': day.isHoliday,
-              'bg-gray-100 ring-1 ring-inset ring-gray-800': day.isToday,
-              'bg-gray-50': day.isOff && !day.isHoliday && !day.isToday,
-              'bg-white': !day.isOff && !day.isHoliday && !day.isToday,
-            }"
+            class="min-h-[84px] p-1.5 border-l border-b border-gray-300 flex flex-col"
+            :class="day.isOff ? 'bg-gray-50' : 'bg-white'"
           >
             <!-- Day number -->
             <span
-              class="text-[11px] font-bold block mb-0.5"
-              :class="{
-                'text-gray-900': day.isToday || !day.isOff,
-                'text-gray-500': day.isOff && !day.isToday,
-              }"
+              class="text-xl font-extrabold leading-none mb-1"
+              :class="day.isOff ? 'text-gray-400' : 'text-gray-900'"
+              :style="day.isToday ? 'text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2px' : ''"
             >{{ day.dayNum }}</span>
 
-            <!-- Holiday badge -->
-            <div v-if="day.isHoliday" class="mb-1">
-              <span class="text-[8px] font-semibold text-gray-900 bg-gray-300 rounded px-1 py-0.5 leading-tight block truncate">
-                {{ day.holidayName }}
-              </span>
+            <!-- Holiday name -->
+            <div v-if="day.isHoliday" class="text-[8px] italic font-semibold text-gray-600 mb-0.5 truncate">
+              {{ day.holidayName }}
             </div>
 
-            <!-- Timeline (07:00 → 21:00): shift sits at its start time, height = duration -->
-            <div class="relative flex-1 min-h-[44px]" :style="timelineBg">
+            <!-- Morning half -->
+            <div class="flex-1 min-h-0 pt-px">
               <div
-                v-for="s in day.shifts"
+                v-for="s in day.shifts.filter((x) => x.start_time < NOON)"
                 :key="s.id"
-                class="absolute inset-x-0 flex items-center justify-between overflow-hidden text-[9px] font-semibold leading-none rounded px-1 bg-white border border-gray-900 text-gray-900"
-                :style="{ top: shiftBand(s.start_time, s.end_time).top + '%', height: `max(11px, ${shiftBand(s.start_time, s.end_time).height}%)` }"
+                class="text-[11px] font-bold text-gray-900 leading-tight"
               >
-                <span>{{ s.start_time }}–{{ s.end_time }}</span>
+                {{ s.start_time }}–{{ s.end_time }}
+                <span class="text-[8px] font-normal text-gray-500 ml-0.5">{{ duration(s.start_time, s.end_time) }}</span>
               </div>
-
-              <!-- Leave -->
-              <div
-                v-if="!day.shifts.length && day.onLeave"
-                class="text-[9px] text-gray-900 bg-gray-100 border border-gray-300 rounded px-1 py-0.5"
-              >
+              <div v-if="!day.shifts.length && day.onLeave" class="text-[9px] italic text-gray-500">
                 {{ t('schedule.leave') }}
+              </div>
+            </div>
+
+            <!-- Afternoon half -->
+            <div class="flex-1 min-h-0 border-t border-dashed border-gray-300 mt-px pt-px">
+              <div
+                v-for="s in day.shifts.filter((x) => x.start_time >= NOON)"
+                :key="s.id"
+                class="text-[11px] font-bold text-gray-900 leading-tight"
+              >
+                {{ s.start_time }}–{{ s.end_time }}
+                <span class="text-[8px] font-normal text-gray-500 ml-0.5">{{ duration(s.start_time, s.end_time) }}</span>
               </div>
             </div>
           </div>
@@ -145,7 +144,7 @@
           <div
             v-for="i in trailingBlanks"
             :key="`t${i}`"
-            class="min-h-[80px] border-r border-b border-gray-200 bg-gray-50"
+            class="min-h-[84px] border-l border-b border-gray-300 bg-gray-50"
           />
         </div>
 
@@ -169,7 +168,7 @@ import { useApi } from '@/composables/useApi'
 import { useAuthStore } from '@/stores/auth'
 import { useStoreContext } from '@/stores/storeContext'
 import type { ShiftInstance, Assignment } from '@/types'
-import { icsDateTime, icsEscape, icsFold, duration, isoWeek } from '../utils/icsUtils'
+import { icsDateTime, icsEscape, icsFold, duration } from '../utils/icsUtils'
 
 const { t, locale } = useI18n()
 const auth = useAuthStore()
@@ -324,31 +323,8 @@ watch([open, selectedMonth], () => { if (open.value) loadMonth() })
 
 const todayIso = localIso(new Date())
 
-// ── Day timeline mapping ──────────────────────────────────────────────────────
-// Each day cell is a vertical time axis from DAY_START to DAY_END. A shift is
-// placed at its start time with a height proportional to its duration, so the
-// reader can see morning / afternoon / evening at a glance (blank = free time).
-const DAY_START_MIN = 7 * 60   // 07:00 at the top of the cell
-const DAY_END_MIN   = 21 * 60  // 21:00 at the bottom
-const DAY_SPAN_MIN  = DAY_END_MIN - DAY_START_MIN
-
-function toMin(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number)
-  return h * 60 + m
-}
-
-/** Vertical band (% from top + % height, clamped to the visible window) for a shift. */
-function shiftBand(start: string, end: string): { top: number; height: number } {
-  const s = Math.max(0, Math.min(100, ((toMin(start) - DAY_START_MIN) / DAY_SPAN_MIN) * 100))
-  const e = Math.max(0, Math.min(100, ((toMin(end)   - DAY_START_MIN) / DAY_SPAN_MIN) * 100))
-  return { top: s, height: Math.max(0, e - s) }
-}
-
-// Faint hourly gridlines (one band every 2h across the 14h window) drawn behind shifts.
-const timelineBg = {
-  backgroundImage:
-    'repeating-linear-gradient(to bottom, #eef0f2 0, #eef0f2 1px, transparent 1px, transparent calc(100% / 7))',
-}
+// Morning / afternoon split point. HH:MM strings compare correctly as text.
+const NOON = '12:00'
 
 
 const calendarDays = computed(() => {
@@ -520,72 +496,37 @@ function printSchedule() {
   const weekRows: Cell[][] = []
   for (let i = 0; i < flat.length; i += 7) weekRows.push(flat.slice(i, i + 7))
 
-  // ── Weekly hours ───────────────────────────────────────────────────────────
-  function weekMinutes(row: Cell[]): number {
-    return row.reduce((acc, day) => {
-      if (!day) return acc
-      for (const s of day.shifts) {
-        const [sh, sm] = s.start_time.split(':').map(Number)
-        const [eh, em] = s.end_time.split(':').map(Number)
-        acc += (eh * 60 + em) - (sh * 60 + sm)
-      }
-      return acc
-    }, 0)
-  }
+  // ── Render one day cell (minimalist: big number + AM / PM split) ────────────
+  const chip = (s: { start_time: string; end_time: string }) =>
+    `<div class="sh">${s.start_time}–${s.end_time}<span class="sub">${duration(s.start_time, s.end_time)}</span></div>`
 
-  // ── Render one day cell ────────────────────────────────────────────────────
   function renderCell(day: Cell): string {
-    if (!day) return `<div class="cell cell-empty"></div>`
+    if (!day) return `<div class="c c-off"></div>`
 
-    const cls = [
-      'cell',
-      day.isHoliday                            ? 'cell-holiday' : '',
-      day.isToday                              ? 'cell-today'   : '',
-      day.isOff && !day.isHoliday && !day.isToday ? 'cell-off'  : '',
-    ].filter(Boolean).join(' ')
+    const cls = ['c', day.isOff ? 'c-off' : '', day.isToday ? 'c-today' : '']
+      .filter(Boolean).join(' ')
 
-    const numCls = day.isToday ? 'dn dn-today' : day.isOff ? 'dn dn-off' : 'dn'
+    const hol = day.isHoliday
+      ? `<div class="hol">${day.holidayName}</div>` : ''
 
-    const badge  = day.isHoliday
-      ? `<div class="hbadge">${day.holidayName}</div>` : ''
+    // Split shifts into morning (starts before noon) and afternoon zones.
+    const am = day.shifts.filter(s => s.start_time < NOON).map(chip).join('')
+    const pm = day.shifts.filter(s => s.start_time >= NOON).map(chip).join('')
 
-    // Each shift placed at its start time, height proportional to duration.
-    const chips  = day.shifts.map(s => {
-      const { top, height } = shiftBand(s.start_time, s.end_time)
-      return `<div class="shift" style="top:${top.toFixed(1)}%;height:max(9px,${height.toFixed(1)}%)">
-        <span class="st">${s.start_time}–${s.end_time}</span>
-        <span class="dur">${duration(s.start_time, s.end_time)}</span>
-      </div>`
-    }).join('')
-
-    const leave = !day.shifts.length && day.onLeave
-      ? `<div class="leave">${t('schedule.leave')}</div>` : ''
+    const lv = !day.shifts.length && day.onLeave
+      ? `<div class="lv">${t('schedule.leave')}</div>` : ''
 
     return `<div class="${cls}">
-      <span class="${numCls}">${day.dayNum}</span>
-      ${badge}
-      <div class="timeline">${chips}${leave}</div>
+      <span class="num">${day.dayNum}</span>${hol}
+      <div class="half am">${am}${lv}</div>
+      <div class="half pm">${pm}</div>
     </div>`
   }
 
   // ── Build week rows HTML ───────────────────────────────────────────────────
-  const rowsHtml = weekRows.map(row => {
-    // Week number from first non-null cell
-    const firstDay = row.find(c => c !== null)
-    let weekNum = ''
-    if (firstDay) {
-      const d = new Date(parsedMonth.value.year, parsedMonth.value.month - 1, firstDay.dayNum)
-      weekNum = `${t('schedule.weekPrefix')}${isoWeek(d)}`
-    }
-
-    const wkMins  = weekMinutes(row)
-    const wkLabel = wkMins ? `<span class="wk-h">${duration('00:00', `${String(Math.floor(wkMins/60)).padStart(2,'0')}:${String(wkMins%60).padStart(2,'0')}`)}</span>` : ''
-
-    return `<div class="week-row">
-      <div class="wk-num">${weekNum}${wkLabel}</div>
-      ${row.map(renderCell).join('')}
-    </div>`
-  }).join('')
+  const rowsHtml = weekRows.map(row =>
+    `<div class="wkrow">${row.map(renderCell).join('')}</div>`
+  ).join('')
 
   // ── Totals ─────────────────────────────────────────────────────────────────
   const totMins   = totalMinutes.value
@@ -627,120 +568,47 @@ function printSchedule() {
     .month { font-size: 11pt; font-weight: 700; color: #111827; text-transform: capitalize; }
     .meta  { font-size: 7pt; color: #6b7280; }
 
-    /* ── Grid columns ── */
-    /* 36px week-num + 6× working day Mon–Sat (1fr) + Sunday (0.65fr) */
-    .col-headers, .week-row {
-      display: grid;
-      grid-template-columns: 36px 1fr 1fr 1fr 1fr 1fr 1fr 0.65fr;
-      width: 100%;
-    }
-    .col-headers { margin-bottom: 1px; }
-
-    /* ── Column headers ── */
-    .ch-wk { /* empty corner */ }
-    .ch-day {
-      text-align: center; font-size: 7pt; font-weight: 700;
-      text-transform: uppercase; letter-spacing: .06em;
-      color: #fff; background: #111827;
-      padding: 3px 2px; border-left: 1px solid #374151;
-    }
-    .ch-day:first-of-type { border-left: none; }
-    .ch-day.we { background: #6b7280; }
-
     /* ── Calendar (fills remaining page height) ── */
-    .calendar { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    .cal { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 
-    /* ── Week row (rows share the available height equally) ── */
-    .week-row { flex: 1 1 0; border-top: 1px solid #e5e7eb; }
-    .week-row:last-child { border-bottom: 1px solid #e5e7eb; }
-
-    /* ── Week number column ── */
-    .wk-num {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: flex-start; padding-top: 4px;
-      font-size: 6.5pt; font-weight: 700; color: #6b7280;
-      border-right: 2px solid #d1d5db;
-      background: #f3f4f6;
-      gap: 2px;
+    /* ── Column headers (Mon–Sat 1fr, Sunday narrower) ── */
+    .ch { display: grid; grid-template-columns: repeat(6, 1fr) 0.7fr; margin-bottom: 3px; }
+    .ch > div {
+      font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+      color: #6b7280; padding-bottom: 2px; border-bottom: 1.5px solid #111827;
     }
-    .wk-h { font-size: 6pt; color: #6b7280; font-weight: 600; }
+    .ch > div:last-child { color: #9ca3af; }
+
+    /* ── Week rows share the available height equally ── */
+    .wkrow {
+      display: grid; grid-template-columns: repeat(6, 1fr) 0.7fr;
+      flex: 1 1 0; border-bottom: 1px solid #d1d5db;
+    }
 
     /* ── Day cells ── */
-    .cell {
+    .c {
       display: flex; flex-direction: column;
-      min-height: 0; padding: 3px 4px;
-      border-left: 1px solid #e5e7eb;
-      background: #fff;
+      padding: 3px 5px; min-height: 0;
+      border-left: 1px solid #e5e7eb; background: #fff;
     }
-    .cell-empty   { background: #f9fafb; }
-    .cell-off     { background: #f3f4f6; }
-    .cell-holiday { background: #e5e7eb; }
-    .cell-today   { background: #f3f4f6; box-shadow: inset 3px 0 0 #111827; }
+    .c:first-child { border-left: none; }
+    .c-off   { background: #fafafa; }
+    .c-today { box-shadow: inset 3px 0 0 #111827; }
 
     /* ── Day number ── */
-    .dn {
-      display: block; font-size: 8.5pt; font-weight: 700;
-      color: #111827; margin-bottom: 2px; line-height: 1;
-    }
-    .dn-today { color: #111827; }
-    .dn-off   { color: #6b7280; }
+    .num { font-size: 13pt; font-weight: 800; line-height: 1; margin-bottom: 2px; }
+    .c-off .num { color: #9ca3af; font-weight: 700; }
+    .c-today .num { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2px; }
 
-    /* ── Day timeline (07:00 top → 21:00 bottom) ── */
-    .timeline {
-      position: relative; flex: 1 1 auto; min-height: 0; margin-top: 1px;
-      background-image: repeating-linear-gradient(
-        to bottom, #eef0f2 0, #eef0f2 0.3pt, transparent 0.3pt, transparent calc(100% / 7)
-      );
-    }
+    /* ── Morning / afternoon halves ── */
+    .half { flex: 1 1 0; min-height: 0; padding-top: 1px; }
+    .half.pm { border-top: 1px dashed #d1d5db; margin-top: 1px; }
 
-    /* ── Holiday badge ── */
-    .hbadge {
-      font-size: 6pt; font-weight: 600; color: #111827;
-      background: #d1d5db; border-radius: 2px;
-      padding: 1px 3px; margin-bottom: 2px;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      max-width: 100%;
-    }
-
-    /* ── Shift chips (absolutely placed on the day timeline) ── */
-    .shift {
-      position: absolute; left: 0; right: 0;
-      display: flex; justify-content: space-between; align-items: center;
-      border-radius: 3px; padding: 0 4px;
-      font-size: 7pt; font-weight: 600; line-height: 1.1;
-      background: #fff; color: #111827;
-      border: 1px solid #111827; border-left: 3px solid #111827;
-      overflow: hidden;
-    }
-    .dur { font-size: 6pt; font-weight: 400; color: #4b5563; }
-
-    /* ── Leave ── */
-    .leave {
-      font-size: 6.5pt; color: #111827;
-      background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 3px;
-      padding: 1px 4px; margin-top: 2px;
-    }
-
-    /* ── Notes / annotation area ── */
-    .notes {
-      flex: 0 0 auto;
-      margin-top: 6px;
-      height: 24mm;
-      border: 1px solid #9ca3af; border-radius: 3px;
-      padding: 3px 6px;
-    }
-    .notes-label {
-      font-size: 6.5pt; font-weight: 700;
-      text-transform: uppercase; letter-spacing: .06em;
-      color: #6b7280;
-    }
-    .notes-lines {
-      margin-top: 4px;
-      background-image: repeating-linear-gradient(
-        to bottom, transparent 0, transparent 7mm, #e5e7eb 7mm, #e5e7eb calc(7mm + 0.4pt)
-      );
-      height: 17mm;
-    }
+    /* ── Holiday + shift text ── */
+    .hol { font-size: 6pt; font-weight: 600; color: #374151; font-style: italic; margin-bottom: 1px; }
+    .sh  { font-size: 8.5pt; font-weight: 700; line-height: 1.15; }
+    .sub { font-size: 6pt; font-weight: 400; color: #6b7280; margin-left: 4px; }
+    .lv  { font-size: 7pt; color: #6b7280; font-style: italic; }
 
     /* ── Footer ── */
     .footer {
@@ -765,19 +633,11 @@ function printSchedule() {
     <span class="meta">${t('schedule.generatedOn')} ${genDate}</span>
   </div>
 
-  <div class="col-headers">
-    <div class="ch-wk"></div>
-    ${weekDayLabels.value.slice(0, 6).map(d => `<div class="ch-day">${d}</div>`).join('\n    ')}
-    ${weekDayLabels.value.slice(6).map(d => `<div class="ch-day we">${d}</div>`).join('\n    ')}
-  </div>
-
-  <div class="calendar">
+  <div class="cal">
+    <div class="ch">
+      ${weekDayLabels.value.map(d => `<div>${d}</div>`).join('\n      ')}
+    </div>
     ${rowsHtml}
-  </div>
-
-  <div class="notes">
-    <span class="notes-label">${t('schedule.notesLabel')}</span>
-    <div class="notes-lines"></div>
   </div>
 
   <div class="footer">
