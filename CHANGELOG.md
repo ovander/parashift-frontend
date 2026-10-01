@@ -19,6 +19,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Dependencies updated to their latest release within the current major versions (`npm
+  update`): Vue 3.5.43, Vite 8.3.1, vue-tsc 3.3.11, Playwright 1.63, FullCalendar 6.1.21, and
+  the rest of the lockfile. Major-version upgrades come in their own pull requests.
+
 - `scripts/push.sh` reads the VPS address (`SSH_USER`, `SSH_HOST`, `SSH_PORT`) from the
   environment or `~/.config/parashift/deploy.env` instead of the repository.
 
