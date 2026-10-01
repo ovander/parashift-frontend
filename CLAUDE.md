@@ -45,6 +45,7 @@ npm ci
 npx vue-tsc -b                 # typecheck
 npm run lint:i18n              # ESLint: no errors; the warning cap only goes down
 npx vitest run                 # unit tests
+npm audit --omit=dev --audit-level=high
 npx vite build                 # production build
 npx playwright test            # e2e against the production build (mocks every API call)
 ```

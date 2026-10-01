@@ -39,6 +39,10 @@ jobs:
       - name: Unit tests
         run: npx vitest run
 
+      # Production dependencies must stay free of high/critical advisories.
+      - name: npm audit (production deps)
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Production build
         run: npx vite build
 
