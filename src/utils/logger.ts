@@ -84,7 +84,6 @@ export function extractApiError(err: any): string {
  *   const log = createDevlog('PlanStore')
  *   log.info('fetchOrCreate →', { storeId })
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-function
 const noop = (..._args: unknown[]) => {}
 
 const isDev = import.meta.env.DEV
