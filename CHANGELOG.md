@@ -14,5 +14,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- High-severity advisories in production dependencies (axios, form-data, nanoid, postcss):
+  `npm audit fix`. CI now fails on a high or critical advisory in production dependencies.
+
 - `npm run lint:i18n` runs: ESLint, `vue-eslint-parser` and `@typescript-eslint/parser` are
   dev dependencies, so `.vue` files parse. The 16 existing warnings are capped.
