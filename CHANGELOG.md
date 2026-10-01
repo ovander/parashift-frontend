@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-10-01
+
+Sign-in through the API's Backend-for-Frontend: needs API v3.0.0, deployed first, and Caddy
+sending `/api/*`, `/bff/*` and `/auth/*` on this host to the API. Build without
+`VITE_API_BASE_URL` or `VITE_AUTH_*` (delete stale `.env.production` / `.env.*.local`).
+
 ### Changed
 
 - Sign-in through the backend's Backend-for-Frontend: the SPA navigates to `/bff/login`, reads
