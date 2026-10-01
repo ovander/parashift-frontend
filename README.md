@@ -105,10 +105,10 @@ The interface is in English and French; the language follows the user's profile.
 ## Architecture
 
 ```
-browser ── https://parashift.vandermoten.eu ── Caddy ─┬─ /api/* /auth/* → Parashift API (Go, loopback)
+browser ── https://parashift.vandermoten.eu ── Caddy ─┬─ /api/* /bff/* /auth/* → Parashift API (Go, loopback)
                                                       └─ everything else → this SPA (static files)
 
-SPA ── sign-in ──→ Socrate (https://socrate.vandermoten.eu), authorization code + PKCE
+sign-in: SPA → /bff/login → Socrate (https://socrate.vandermoten.eu) → /bff/callback → SPA
 ```
 
 - **Feature slices.** Each business area lives in `src/features/<domain>/` with its own views,
@@ -126,11 +126,15 @@ SPA ── sign-in ──→ Socrate (https://socrate.vandermoten.eu), authoriza
 - **Role-aware routing.** Route `meta` names the required role (`manager`, `employee`, `admin`);
   the guard in `src/router/index.ts` redirects otherwise. The backend enforces the same rules.
 
-**Sign-in is moving to the backend.** Today the SPA runs the authorization-code flow with PKCE
-itself and keeps the access and refresh tokens in `localStorage`. The migration under way
-(`parashift-backend/docs/SOCRATE-COMPAT-REPORT.md`) moves sign-in to the API's
-Backend-for-Frontend: the browser will hold only an HttpOnly session cookie, call its own origin
-with a CSRF header, and have no Socrate setting and no token code at all.
+**Sign-in runs on the backend (BFF).** The SPA has no Socrate setting and no token code. To sign
+in it navigates to `/bff/login?return_to=<page>`; the API runs the authorization-code flow with
+PKCE, keeps the tokens in its server-side session, sets the HttpOnly `__Host-parashift_session`
+cookie and sends the browser back to the page. The router guard asks `GET /bff/session` once per
+page load and keeps only its CSRF token, in memory; `useApi` calls the SPA's own origin, never
+with an `Authorization` header, and sends `X-CSRF-Token` on POST, PUT, PATCH and DELETE. A 401
+re-checks the session and signs in again to the same page; a stale CSRF token is refreshed and
+the request retried once. An invite link (`/claim/<token>`) signs in back to itself, then claims.
+`src/test/noBrowserTokens.spec.ts` fails if auth data reaches browser storage again.
 
 ---
 
@@ -173,8 +177,10 @@ scripts/               push.sh (build and upload), deploy-frontend.sh (on the VP
 
 - Node 24 (`.nvmrc`) and npm.
 - The API running locally ([`parashift-backend`](https://github.com/ovander/parashift-backend),
-  port 4000 by default) and a Socrate client whose redirect URIs include
-  `http://localhost:5181/callback`, for anything past the landing page.
+  with its BFF configured, for anything past the landing page. `npm run dev` proxies `/api`,
+  `/bff` and `/auth` to `PARASHIFT_API` (default `http://localhost:8080`), so the SPA calls its
+  own origin and the session cookie works; the API's `BFF_REDIRECT_URL` is then
+  `http://localhost:5181/bff/callback`, registered at Socrate.
 
 ### Install and run
 
@@ -207,16 +213,14 @@ stale ones.
 
 | Variable | Required | Meaning |
 |---|---|---|
-| `VITE_API_BASE_URL` | yes | The API's origin, e.g. `http://localhost:4000`. Defaults to `http://localhost:8080`. |
-| `VITE_AUTH_BASE_URL` | yes | Socrate's base URL (`https://socrate.vandermoten.eu`). |
-| `VITE_AUTH_CLIENT_ID` | yes | Parashift's OAuth client ID at Socrate (public). |
-| `VITE_AUTH_REDIRECT_URI` | yes | This app's `/callback` URL, registered exactly at Socrate. |
 | `VITE_DEFAULT_LOCALE` | no | `en` or `fr` before the user's profile is known. |
 | `VITE_FULLCALENDAR_LICENSE_KEY` | no | FullCalendar scheduler licence key; the non-commercial key by default. |
 | `VITE_SENTRY_DSN` | no | Enables Sentry error monitoring. |
 
-The four `VITE_API_*`/`VITE_AUTH_*` variables go away with the move to the Backend-for-Frontend:
-the app will call its own origin and know nothing about Socrate.
+There is no API or Socrate setting: the app calls its own origin. `PARASHIFT_API` (a shell
+variable, not `VITE_*`) only tells the dev server where to proxy. The build sets a
+Content-Security-Policy with `connect-src 'self'` (plus the Sentry origin when
+`VITE_SENTRY_DSN` is set).
 
 ---
 
@@ -246,8 +250,8 @@ dependency audit, the build, and Playwright on every pull request and on `main`.
 
 The app is static files behind Caddy on the apps VPS, at `https://parashift.vandermoten.eu`:
 `push.sh` uploads `dist/` to `/opt/apps/parashift/frontend`. Caddy must serve it with
-`try_files {path} /index.html` (client-side routes) and send `/api/*` and `/auth/*` to the API on
-loopback.
+`try_files {path} /index.html` (client-side routes) and send `/api/*`, `/bff/*` and `/auth/*` to
+the API on loopback.
 
 ```bash
 scripts/push.sh v0.2.0          # npm ci, production build, rsync dist/ to the VPS
@@ -278,17 +282,17 @@ sign-in and their fixes are tracked in
 - All UI text goes through vue-i18n; `npm run lint:i18n` flags hardcoded strings.
 - Roles come from the API (`GET /api/v1/me`), never from the browser; the router only mirrors the
   backend's rules.
-- Known gap, being closed: tokens are in `localStorage` and there is no Content-Security-Policy
-  yet. Both go with the Backend-for-Frontend (a `noBrowserTokens` test and
-  `connect-src 'self'`).
+- No token in the browser: sign-in runs on the backend's BFF, the session is an HttpOnly
+  `__Host-` cookie, and the CSRF token lives in memory only (`noBrowserTokens.spec.ts` guards it,
+  statically and at run time).
+- The build's Content-Security-Policy pins `connect-src 'self'`; `useApi` refuses absolute URLs.
 
 ---
 
 ## Status
 
-Deployed at `https://parashift.vandermoten.eu`. Current work, in order:
-sign-in through the backend's BFF (no token in the browser), then the coverage floor and the
-remaining hardcoded strings. Known limits: no offline mode, the planner needs a tablet or larger
+Deployed at `https://parashift.vandermoten.eu`. Current work, in order: the coverage floor and
+the remaining hardcoded strings. Known limits: no offline mode, the planner needs a tablet or larger
 screen, two managers editing the same week see each other's changes only after a refresh, and AI
 suggestions improve with a few weeks of history.
 

@@ -8,8 +8,8 @@ API lives in `ovander/parashift-backend`; many changes touch both.
 Parashift plans shifts for pharmacies: a planner and coverage views for managers, "today" and
 "my week" for employees, and a cross-store admin area. This repository is the web app: Vue 3
 single-page application in TypeScript, Vite, Pinia, vue-router, PrimeVue 4, Tailwind CSS 3 and
-FullCalendar, in English and French. Sign-in is Socrate (`https://socrate.vandermoten.eu`); it is
-moving to the backend's Backend-for-Frontend (`/bff`), after which the SPA holds no token.
+FullCalendar, in English and French. Sign-in is Socrate (`https://socrate.vandermoten.eu`) through
+the backend's Backend-for-Frontend (`/bff`): the SPA holds no token and no Socrate setting.
 
 ## Sources of truth, in order
 
@@ -27,9 +27,10 @@ moving to the backend's Backend-for-Frontend (`/bff`), after which the SPA holds
 - **API calls** go through `src/composables/useApi.ts`. Do not call the API with raw
   `fetch`/`axios` elsewhere.
 - **Tokens.** Do not add token, PKCE or OAuth-state code, and never put auth data in
-  `localStorage` or `sessionStorage`: that code is being removed (report rows S2, S3). After the
-  BFF, every API call is a same-origin path with the session cookie and `X-CSRF-Token`, never an
-  `Authorization` header.
+  `localStorage` or `sessionStorage` (report rows S2, S3; `src/test/noBrowserTokens.spec.ts`).
+  Sign-in is a navigation to `/bff/login?return_to=`; every API call is a same-origin path with
+  the session cookie and `X-CSRF-Token` on unsafe methods, never an `Authorization` header or an
+  absolute URL. Keep the build's CSP `connect-src 'self'`.
 - **Strings.** Every user-visible string is an i18n key present in both `src/locales/en/*.json`
   and `src/locales/fr/*.json` (`i18n-parity.spec.ts`, `npm run lint:i18n`).
 - **Never weaken a gate** to get green: no skipped tests, no `eslint-disable` or
@@ -57,7 +58,9 @@ chain a push after a command that may fail.
 
 - Unit tests sit next to the code in `__tests__/` (`*.spec.ts`, Vitest with jsdom).
 - End-to-end tests are in `e2e/` (Playwright, Chromium); they never reach a real backend or the
-  identity provider (`e2e/fixtures.ts`).
+  identity provider (`e2e/fixtures.ts`). `signInAs()` mocks `/bff/session` and `/api/v1/me`;
+  `e2e/auth.spec.ts` runs the BFF round trip against a same-origin fake issuer, with forwarding
+  pages rather than fulfilled 302s (a fulfilled redirect's target bypasses `page.route()`).
 - A bug fix comes with a test that fails without it.
 
 ## Git workflow

@@ -7,7 +7,7 @@
 import {
   test,
   expect,
-  injectAuth,
+  signInAs,
   injectStoreContext,
   mockApiCalls,
   MOCK_MANAGER,
@@ -101,7 +101,7 @@ test.describe('TodayView — Today tab', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(page, MOCK_EMPLOYEE)
+    await signInAs(page, MOCK_EMPLOYEE)
     await mockApiCalls(page, {
       '/shifts':      [TODAY_SHIFT, FUTURE_SHIFT],
       '/assignments': [MY_ASSIGNMENT, OTHER_ASSIGNMENT],
@@ -134,7 +134,7 @@ test.describe('TodayView — Today tab', () => {
     await page.close()
     const newPage = await page.context().newPage()
     await newPage.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(newPage, MOCK_MANAGER)
+    await signInAs(newPage, MOCK_MANAGER)
     await mockApiCalls(newPage, {
       '/shifts':         [TODAY_SHIFT],
       '/assignments':    [MY_ASSIGNMENT],
@@ -151,7 +151,7 @@ test.describe('TodayView — Today tab', () => {
     await page.close()
     const newPage = await page.context().newPage()
     await newPage.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(newPage, MOCK_EMPLOYEE)
+    await signInAs(newPage, MOCK_EMPLOYEE)
     await mockApiCalls(newPage, {
       '/shifts':         [],
       '/assignments':    [],
@@ -173,7 +173,6 @@ test.describe('TodayView — Today tab', () => {
     await page.close()
     const newPage = await page.context().newPage()
     await newPage.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(newPage, MOCK_EMPLOYEE)
     await newPage.route('**/api/v1/**', async (route) => {
       // 5 s delay — outlasts goto() so loading state is visible after navigation
       await new Promise((r) => setTimeout(r, 5000))
@@ -183,6 +182,8 @@ test.describe('TodayView — Today tab', () => {
         : JSON.stringify([])
       await route.fulfill({ status: 200, contentType: 'application/json', body })
     })
+    // After the delayed catch-all, so the sign-in (/bff/session, /api/v1/me) answers at once.
+    await signInAs(newPage, MOCK_EMPLOYEE)
     // Use 'commit' so goto() returns as soon as the first byte arrives,
     // well before the 5 s API delay elapses, giving us a wide window to
     // observe the skeleton state.
@@ -196,7 +197,7 @@ test.describe('TodayView — Today tab', () => {
     await page.close()
     const newPage = await page.context().newPage()
     await newPage.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(newPage, MOCK_EMPLOYEE)
+    await signInAs(newPage, MOCK_EMPLOYEE)
     await mockApiCalls(newPage, {
       '/shifts':         [],
       '/assignments':    [],
@@ -227,7 +228,7 @@ test.describe('TodayView — tab navigation', () => {
     // min-w-0 flex children (e.g. leave-entry text) down to 0 px — causing
     // Playwright's toBeVisible() to report them as hidden.
     await page.addInitScript(() => localStorage.setItem('nav:collapsed', 'true'))
-    await injectAuth(page, MOCK_EMPLOYEE)
+    await signInAs(page, MOCK_EMPLOYEE)
     await mockApiCalls(page, {
       '/shifts':         [TODAY_SHIFT],
       '/assignments':    [MY_ASSIGNMENT],
@@ -287,7 +288,7 @@ test.describe('TodayView — tab navigation', () => {
     await page.close()
     const newPage = await page.context().newPage()
     await newPage.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(newPage, MOCK_EMPLOYEE)
+    await signInAs(newPage, MOCK_EMPLOYEE)
     await mockApiCalls(newPage, {
       '/shifts':         [],
       '/assignments':    [],
@@ -312,7 +313,7 @@ test.describe('TodayView — Team tab', () => {
 
   test('shows all assigned employees across today\'s shifts', async ({ page }) => {
     await page.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(page, MOCK_EMPLOYEE)
+    await signInAs(page, MOCK_EMPLOYEE)
     await mockApiCalls(page, {
       '/shifts':         [TODAY_SHIFT],
       '/assignments':    [MY_ASSIGNMENT, OTHER_ASSIGNMENT],
@@ -330,7 +331,7 @@ test.describe('TodayView — Team tab', () => {
 
   test('shows empty state when no one is on shift today', async ({ page }) => {
     await page.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(page, MOCK_EMPLOYEE)
+    await signInAs(page, MOCK_EMPLOYEE)
     await mockApiCalls(page, {
       '/shifts':         [TODAY_SHIFT],
       '/assignments':    [],            // no one assigned
@@ -360,7 +361,7 @@ test.describe('QuickAssignSheet', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await mockApiCalls(page, {
       '/shifts':         [UNASSIGNED_SHIFT],
       '/assignments':    [],
@@ -400,7 +401,7 @@ test.describe('QuickAssignSheet', () => {
     await page.close()
     const newPage = await page.context().newPage()
     await newPage.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(newPage, MOCK_MANAGER)
+    await signInAs(newPage, MOCK_MANAGER)
     // Only logistics employees, but shift requires pharmacist
     await mockApiCalls(newPage, {
       '/shifts':         [UNASSIGNED_SHIFT],
@@ -427,7 +428,7 @@ test.describe('WeekStrip auto-select', () => {
 
   test('Week tab shows WeekStrip with week navigation', async ({ page }) => {
     await page.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(page, MOCK_EMPLOYEE)
+    await signInAs(page, MOCK_EMPLOYEE)
     await mockApiCalls(page, {
       '/shifts':         [TODAY_SHIFT, FUTURE_SHIFT],
       '/assignments':    [MY_ASSIGNMENT],
@@ -453,7 +454,7 @@ test.describe('ShiftCard acknowledgement', () => {
 
   test('shows "Confirm shift" button for published unacknowledged shift', async ({ page }) => {
     await page.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(page, MOCK_EMPLOYEE)
+    await signInAs(page, MOCK_EMPLOYEE)
     await mockApiCalls(page, {
       '/shifts':         [TODAY_SHIFT],  // status: PUBLISHED
       '/assignments':    [MY_ASSIGNMENT],
@@ -472,7 +473,7 @@ test.describe('ShiftCard acknowledgement', () => {
 
   test('clicking "Confirm shift" marks as confirmed', async ({ page }) => {
     await page.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(page, MOCK_EMPLOYEE)
+    await signInAs(page, MOCK_EMPLOYEE)
     // Mock the acknowledge endpoint
     await page.route(`**/api/v1/stores/${STORE_ID}/assignments/a1/acknowledge`, (route) =>
       route.fulfill({
@@ -506,7 +507,7 @@ test.describe('TodayView locale', () => {
 
   test('header date is formatted using system locale (not hardcoded en-GB)', async ({ page }) => {
     await page.clock.setFixedTime(FROZEN_DATE)
-    await injectAuth(page, MOCK_EMPLOYEE)
+    await signInAs(page, MOCK_EMPLOYEE)
     await mockApiCalls(page)
     await page.goto(`/stores/${STORE_ID}/today`)
     // Date should be present in some locale-appropriate format

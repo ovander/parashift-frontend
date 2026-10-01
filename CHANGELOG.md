@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Sign-in through the backend's Backend-for-Frontend: the SPA navigates to `/bff/login`, reads
+  `GET /bff/session`, keeps the CSRF token in memory and calls its own origin with
+  `X-CSRF-Token` on unsafe methods; no token, PKCE code or auth data in browser storage, no
+  `/callback` route, no `VITE_API_BASE_URL`/`VITE_AUTH_*`. Invite links sign in back to
+  `/claim/<token>`. The build sets `connect-src 'self'`; `npm run dev` proxies `/api`, `/bff`
+  and `/auth` (report rows S2, S3).
+
 ### Added
 
 - Repository kit for the public release: README rewritten (badges, accurate security,

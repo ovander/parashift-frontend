@@ -1,7 +1,7 @@
 import {
   test,
   expect,
-  injectAuth,
+  signInAs,
   injectStoreContext,
   mockApiCalls,
   MOCK_MANAGER,
@@ -17,7 +17,7 @@ const WEEK_START = '2026-03-30'
 // ── Suite: Publish Flow ────────────────────────────────────────────────────────
 test.describe('Publish Flow', () => {
   test.beforeEach(async ({ page }) => {
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await mockApiCalls(page, {
       '/shifts':      MOCK_SHIFTS_FULL,   // scheduleStore reads array directly (no wrapper)
       '/employees':   { data: MOCK_EMPLOYEES_FULL },

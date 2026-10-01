@@ -1,7 +1,7 @@
 import {
   test,
   expect,
-  injectAuth,
+  signInAs,
   injectStoreContext,
   mockApiCalls,
   MOCK_MANAGER,
@@ -22,7 +22,7 @@ test.describe('Manager Shell (ManagerShellView)', () => {
     // Freeze clock BEFORE navigation so new Date() returns WEEK_START (a Monday)
     // and the app initialises with the correct weekStart.
     await page.clock.setFixedTime(new Date('2026-03-30T12:00:00'))
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await mockApiCalls(page, {
       '/shifts':    MOCK_SHIFTS_FULL,   // scheduleStore reads array directly
       '/employees': { data: MOCK_EMPLOYEES_FULL },
