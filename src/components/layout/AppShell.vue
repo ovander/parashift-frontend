@@ -90,7 +90,7 @@
               @click="setLocale(lang)"
             >{{ lang === 'fr' ? '🇫🇷' : '🇬🇧' }}</button>
           </div>
-          <Button icon="pi pi-sign-out" text rounded size="small" @click="logout" v-tooltip="t('auth.logout')" />
+          <Button icon="pi pi-sign-out" text rounded size="small" data-test="logout" :aria-label="t('auth.logout')" @click="logout" v-tooltip="t('auth.logout')" />
         </div>
         <div v-else class="flex justify-center">
           <button
@@ -239,7 +239,7 @@
             <div class="text-xs font-medium text-gray-800 truncate">{{ authStore.user?.name }}</div>
             <div class="text-xs text-gray-400 capitalize">{{ authStore.user?.position }}</div>
           </div>
-          <Button icon="pi pi-sign-out" text rounded size="small" @click="logout" v-tooltip="t('auth.logout')" />
+          <Button icon="pi pi-sign-out" text rounded size="small" data-test="logout" :aria-label="t('auth.logout')" @click="logout" v-tooltip="t('auth.logout')" />
         </div>
       </template>
     </Drawer>

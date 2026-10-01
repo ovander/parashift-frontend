@@ -20,7 +20,6 @@ console.info(
 if (import.meta.env.DEV) {
   console.info('[parashift] devlog active — open DevTools Console to see flow logs')
   devlog.debug('startup env', {
-    API: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
     MODE: import.meta.env.MODE,
   })
 }

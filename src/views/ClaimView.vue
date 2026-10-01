@@ -63,18 +63,18 @@ onMounted(async () => {
     return
   }
 
-  // If the user is already authenticated, claim immediately without a redirect.
-  if (authStore.isAuthenticated) {
+  // Signed in (including on the way back from Socrate, which returns to this
+  // page): claim at once. Otherwise "Sign in to activate" starts the sign-in.
+  if (await authStore.ensureSession()) {
     await claimNow()
   }
-  // Otherwise, the user will click "Sign in to activate" to initiate the login flow.
 })
 
-async function startLogin() {
+function startLogin() {
   loading.value = true
-  // Persist the token so CallbackView can pick it up after auth.
-  sessionStorage.setItem('pending_claim_token', token)
-  await auth.initiateLogin()
+  // The sign-in comes back to this page, which then claims the invite: the
+  // token travels in the return path, not in browser storage.
+  auth.login(route.fullPath)
 }
 
 async function claimNow() {

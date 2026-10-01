@@ -2,89 +2,95 @@ import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axio
 import { useAuthStore } from '@/stores/auth'
 import { devlog } from '@/utils/logger'
 
-// ── Base API instance (5s default timeout) ────────────────────────────────────
-const api: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
-  timeout: 5_000,
-  headers: { 'Content-Type': 'application/json' },
-})
+// ── Same-origin API client ────────────────────────────────────────────────────
+// The backend's BFF keeps the OAuth tokens; the browser sends its HttpOnly
+// session cookie, which it does for same-origin requests only. Every call is
+// therefore a relative path on the SPA's own origin (Caddy routes /api, /bff
+// and /auth to the backend), and never carries an Authorization header.
+// withCredentials stays false: no cookie would ever go to another origin.
 
-let isRefreshing = false
-let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = []
+const UNSAFE_METHODS = new Set(['post', 'put', 'patch', 'delete'])
 
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token!)))
-  failedQueue = []
+/** True for a URL that names an origin (scheme or protocol-relative). */
+export function isAbsoluteUrl(url: string | undefined): boolean {
+  return !!url && (/^[a-z][a-z\d+.-]*:/i.test(url) || url.startsWith('//'))
 }
 
-function addAuthInterceptor(instance: AxiosInstance) {
+type RetriableConfig = InternalAxiosRequestConfig & { _csrfRetried?: boolean }
+
+// ── Request interceptor: same-origin only, CSRF on unsafe methods ─────────────
+function addSessionInterceptor(instance: AxiosInstance) {
   instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    const auth = useAuthStore()
-    if (auth.accessToken) {
-      config.headers.Authorization = `Bearer ${auth.accessToken}`
+    if (isAbsoluteUrl(config.baseURL) || isAbsoluteUrl(config.url)) {
+      throw new Error(`[api] refusing a cross-origin request to ${config.url}`)
+    }
+    config.headers.delete('Authorization')
+    if (UNSAFE_METHODS.has((config.method ?? 'get').toLowerCase())) {
+      const csrf = useAuthStore().csrf
+      if (csrf) config.headers.set('X-CSRF-Token', csrf)
     }
     return config
   })
 }
 
+/** After the session is lost: a fresh sign-in, back to this page. */
+function signInAgain() {
+  const here = window.location.pathname + window.location.search + window.location.hash
+  useAuthStore().login(here)
+}
+
+// ── Response interceptor: session loss, stale CSRF token, error logging ───────
 function addResponseInterceptor(instance: AxiosInstance) {
   instance.interceptors.response.use(
     (r) => r,
     async (error) => {
-      const originalRequest = error.config
-      if (error.response?.status !== 401) {
-        const method = (error.config?.method ?? '?').toUpperCase()
-        const url    = error.config?.url ?? '?'
-        const status = error.response?.status ?? 'no-response'
-        devlog.error(`[api] ${method} ${url} → ${status}`, error.response?.data ?? error.message)
+      const config = error.config as RetriableConfig | undefined
+      const status = error.response?.status
+
+      if (status !== 401) {
+        const method = (config?.method ?? '?').toUpperCase()
+        const url    = config?.url ?? '?'
+        devlog.error(`[api] ${method} ${url} → ${status ?? 'no-response'}`, error.response?.data ?? error.message)
       }
 
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        if (isRefreshing) {
-          return new Promise((resolve, reject) => {
-            failedQueue.push({ resolve, reject })
-          }).then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`
-            return instance(originalRequest)
-          })
-        }
-        originalRequest._retry = true
-        isRefreshing = true
-        try {
-          devlog.debug('[api] token expired — attempting silent refresh')
-          const auth = useAuthStore()
-          await auth.refresh()
-          processQueue(null, auth.accessToken)
-          originalRequest.headers.Authorization = `Bearer ${auth.accessToken}`
-          return instance(originalRequest)
-        } catch (refreshError) {
-          devlog.error('[api] refresh failed — logging out', refreshError)
-          processQueue(refreshError, null)
-          useAuthStore().logout()
-          window.location.href = '/login'
-          return Promise.reject(refreshError)
-        } finally {
-          isRefreshing = false
-        }
+      const auth = useAuthStore()
+
+      // A 401 means the session is gone (idle timeout, signed out elsewhere, or
+      // its refresh token rejected). Ask the backend once; without a session,
+      // sign in again and come back here.
+      if (status === 401) {
+        devlog.debug('[api] 401 — re-checking the session')
+        if (!(await auth.recheckSession())) signInAgain()
+        return Promise.reject(error)
+      }
+
+      // A 403 for the CSRF token means this tab holds a stale one (a sign-in
+      // in another tab replaced the session): fetch the current one, retry once.
+      const message = String(error.response?.data?.message ?? error.response?.data?.error?.message ?? '')
+      if (status === 403 && /csrf/i.test(message) && config && !config._csrfRetried) {
+        config._csrfRetried = true
+        if (await auth.recheckSession()) return instance(config)
+        signInAgain()
       }
       return Promise.reject(error)
     },
   )
 }
 
-addAuthInterceptor(api)
-addResponseInterceptor(api)
-
 function createTimedApi(timeoutMs: number): AxiosInstance {
   const instance = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+    baseURL: '',
     timeout: timeoutMs,
+    withCredentials: false,
     headers: { 'Content-Type': 'application/json' },
   })
-  addAuthInterceptor(instance)
+  addSessionInterceptor(instance)
   addResponseInterceptor(instance)
   return instance
 }
+
+// ── Base API instance (5s default timeout) ────────────────────────────────────
+const api: AxiosInstance = createTimedApi(5_000)
 
 /** 10s — scheduling mutations (assign/unassign) — fail fast on drag-drop */
 export function useScheduleApi(): AxiosInstance { return createTimedApi(10_000) }

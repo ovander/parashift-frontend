@@ -1,7 +1,7 @@
 import {
   test,
   expect,
-  injectAuth,
+  signInAs,
   injectStoreContext,
   mockApiCalls,
   MOCK_MANAGER,
@@ -44,7 +44,7 @@ test.describe('Mobile Today View (TodayView)', () => {
     await page.clock.setFixedTime(FROZEN_DATE)
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 812 })
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await mockApiCalls(page, {
       // scheduleStore reads shifts as a raw array (no { data: } wrapper)
       '/shifts':        MOCK_SHIFTS_FULL,

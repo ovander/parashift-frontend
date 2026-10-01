@@ -11,12 +11,6 @@ const routes: RouteRecordRaw[] = [
     meta: { public: true },
   },
   {
-    path: '/callback',
-    name: 'callback',
-    component: () => import('@/views/CallbackView.vue'),
-    meta: { public: true },
-  },
-  {
     path: '/claim/:token',
     name: 'claim',
     component: () => import('@/views/ClaimView.vue'),
@@ -159,44 +153,46 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, _from, next) => {
+// Sign-in runs on the backend (BFF): the guard first asks GET /bff/session,
+// once per page load, whether this browser has a session, then decides.
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
+  await auth.ensureSession()
 
-  // Landing page: send authenticated users straight to the app, role-aware
+  // Landing page: send signed-in users straight to the app, role-aware
   if (to.name === 'landing' && auth.isAuthenticated && auth.user?.store_id) {
     const pos = auth.user.position
-    if (pos === 'employee') {
-      return next({ name: 'today', params: { storeId: auth.user.store_id } })
-    }
-    if (pos === 'admin') {
-      return next({ name: 'admin' })
-    }
-    return next({ name: 'planner', params: { storeId: auth.user.store_id } })
+    if (pos === 'employee') return { name: 'today', params: { storeId: auth.user.store_id } }
+    if (pos === 'admin') return { name: 'admin' }
+    return { name: 'planner', params: { storeId: auth.user.store_id } }
   }
 
-  if (to.meta.public) return next()
+  if (to.meta.public) return true
 
   if (!auth.isAuthenticated) {
-    return next({ name: 'login', query: { redirect: to.fullPath } })
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  // A Socrate account with no Parashift employee yet: it claims an invite first.
+  if (!auth.user) {
+    return { name: 'login', query: { error: 'no_account' } }
   }
 
   // Lazily bootstrap option lists once per session (no-op when already loaded).
   useOptionsStore().fetchOptions()
 
   const requiredRole = to.meta.requiresRole as string | undefined
-  if (requiredRole && auth.user?.position !== requiredRole && auth.user?.position !== 'admin') {
+  if (requiredRole && auth.user.position !== requiredRole && auth.user.position !== 'admin') {
     // Managers are a superset of employees — allow them on employee-layer routes too.
-    if (auth.user?.position === 'manager' && requiredRole === 'employee') {
-      return next()
-    }
+    if (auth.user.position === 'manager' && requiredRole === 'employee') return true
     // Role mismatch: redirect managers to their planner, everyone else to login.
-    if (auth.user?.position === 'manager' && auth.user.store_id) {
-      return next({ name: 'planner', params: { storeId: auth.user.store_id } })
+    if (auth.user.position === 'manager' && auth.user.store_id) {
+      return { name: 'planner', params: { storeId: auth.user.store_id } }
     }
-    return next({ name: 'login' })
+    return { name: 'login' }
   }
 
-  next()
+  return true
 })
 
 router.afterEach((to) => {

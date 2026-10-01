@@ -1,4 +1,4 @@
-import { test, expect, injectAuth, injectStoreContext, mockApiCalls, MOCK_MANAGER, MOCK_EMPLOYEE, STORE_ID, SHIFT_ID, EMPLOYEE_ID } from './fixtures'
+import { test, expect, signInAs, injectStoreContext, mockApiCalls, MOCK_MANAGER, MOCK_EMPLOYEE, STORE_ID, SHIFT_ID, EMPLOYEE_ID } from './fixtures'
 
 // ── Shared data ───────────────────────────────────────────────────────────────
 const WEEK_START = '2026-03-30'
@@ -44,7 +44,7 @@ const MOCK_ASSIGNMENT_2 = {
 // ── Suite: Planner ─────────────────────────────────────────────────────────────
 test.describe('Planner view', () => {
   test.beforeEach(async ({ page }) => {
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await mockApiCalls(page, {
       '/employees':   { data: MOCK_EMPLOYEES },
       '/shifts':      MOCK_SHIFTS,       // scheduleStore reads array directly (no wrapper)
@@ -126,7 +126,7 @@ test.describe('Planner view', () => {
     await page.goto(`/stores/${STORE_ID}/planner`)
     // PrimeVue renders icon as child <span> — target <span> to avoid <i> conflicts
     await page.locator('button:has(span.pi-chevron-left)').first().click()
-    await expect(page.getByText(/23 Mar/)).toBeVisible()
+    await expect(page.getByText(/23 Mar/).first()).toBeVisible()
   })
 
   test('nextWeek button advances to next week', async ({ page }) => {
@@ -141,7 +141,7 @@ test.describe('Planner view', () => {
 // ── Suite: Rules ───────────────────────────────────────────────────────────────
 test.describe('Rules view', () => {
   test.beforeEach(async ({ page }) => {
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await mockApiCalls(page)
   })
 
@@ -191,7 +191,7 @@ test.describe('Rules view', () => {
 // ── Suite: Employee self-service ────────────────────────────────────────────────
 test.describe('Employee MyWeek view', () => {
   test.beforeEach(async ({ page }) => {
-    await injectAuth(page, MOCK_EMPLOYEE)
+    await signInAs(page, MOCK_EMPLOYEE)
     await mockApiCalls(page, {
       '/shifts':         MOCK_SHIFTS,      // scheduleStore reads array directly
       '/employees':      { data: MOCK_EMPLOYEES },
@@ -244,14 +244,14 @@ test.describe('Employee MyWeek view', () => {
     await page.goto(`/stores/${STORE_ID}/my-week`)
     // PrimeVue renders icon as child <span> — target <span> to avoid <i> conflicts
     await page.locator('button:has(span.pi-chevron-left)').first().click()
-    await expect(page.getByText(/23 Mar/)).toBeVisible()
+    await expect(page.getByText(/23 Mar/).first()).toBeVisible()
   })
 })
 
 // ── Suite: Coverage Dashboard ─────────────────────────────────────────────────
 test.describe('Coverage Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await mockApiCalls(page)
   })
 
@@ -288,7 +288,7 @@ test.describe('Coverage Dashboard', () => {
 // ── Suite: AI Panel ────────────────────────────────────────────────────────────
 test.describe('AI Panel', () => {
   test.beforeEach(async ({ page }) => {
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await mockApiCalls(page, {
       '/employees':   { data: MOCK_EMPLOYEES },
       '/shifts':      MOCK_SHIFTS,   // scheduleStore reads array directly (no wrapper)
@@ -336,7 +336,7 @@ test.describe('AI Panel', () => {
 // ── Suite: Template Editor ─────────────────────────────────────────────────────
 test.describe('Template Editor', () => {
   test.beforeEach(async ({ page }) => {
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await mockApiCalls(page)
     // templateStore reads res.data directly (array) — no { data: [...] } wrapper
     await page.route(`**/api/v1/stores/${STORE_ID}/templates`, (route) => {
@@ -381,7 +381,7 @@ test.describe('Template Editor', () => {
 // ── Suite: Leave Management ─────────────────────────────────────────────────────
 test.describe('Leave Management', () => {
   test('manager sees leave approval view', async ({ page }) => {
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await mockApiCalls(page, { '/employees': { data: MOCK_EMPLOYEES } })
     // leaveStore fetches /leave-requests with { data: [...] } wrapper
     await page.route(`**/api/v1/stores/${STORE_ID}/leave-requests**`, (route) =>
@@ -399,7 +399,7 @@ test.describe('Leave Management', () => {
   })
 
   test('approve button calls PUT review endpoint', async ({ page }) => {
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await mockApiCalls(page, { '/employees': { data: MOCK_EMPLOYEES } })
     const requests: string[] = []
 
@@ -438,7 +438,7 @@ test.describe('Leave Management', () => {
   })
 
   test('employee leave calendar shows their requests', async ({ page }) => {
-    await injectAuth(page, MOCK_EMPLOYEE)
+    await signInAs(page, MOCK_EMPLOYEE)
     // leaveStore fetches /leave-requests
     await page.route(`**/api/v1/stores/${STORE_ID}/leave-requests**`, (route) =>
       route.fulfill({ status: 200, contentType: 'application/json',
@@ -454,7 +454,7 @@ test.describe('Leave Management', () => {
 // ── Suite: Swap Management ─────────────────────────────────────────────────────
 test.describe('Swap Management', () => {
   test('manager swap approval view lists swap requests', async ({ page }) => {
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     // swapStore fetches /swap-requests (not /swaps)
     await page.route(`**/api/v1/stores/${STORE_ID}/swap-requests**`, (route) =>
       route.fulfill({ status: 200, contentType: 'application/json',
@@ -487,14 +487,14 @@ test.describe('Authentication', () => {
   })
 
   test('employee cannot access manager planner route', async ({ page }) => {
-    await injectAuth(page, MOCK_EMPLOYEE)
+    await signInAs(page, MOCK_EMPLOYEE)
     await page.goto(`/stores/${STORE_ID}/planner`)
     // Should be redirected away from planner (role guard)
     await expect(page).not.toHaveURL(/\/planner/)
   })
 
   test('manager can access planner route', async ({ page }) => {
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await mockApiCalls(page)
     await page.goto(`/stores/${STORE_ID}/planner`)
     await expect(page).toHaveURL(/\/planner/)
@@ -504,12 +504,12 @@ test.describe('Authentication', () => {
 // ── Suite: Admin screens ───────────────────────────────────────────────────────
 test.describe('Admin screens', () => {
   test('employee management table renders', async ({ page }) => {
-    await injectAuth(page, { ...MOCK_MANAGER, position: 'admin' })
     // IMPORTANT — Register the catch-all FIRST so it's checked LAST (LIFO).
     // Specific routes registered after will be checked first.
     await page.route(`**/api/v1/**`, (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({}) })
     )
+    await signInAs(page, { ...MOCK_MANAGER, position: 'admin' }) // after the catch-all, so /api/v1/me is its
     // Admin view uses /admin/employees, /admin/stores, /admin/metadata
     await page.route(`**/api/v1/admin/stores**`, (route) =>
       route.fulfill({ status: 200, contentType: 'application/json',
@@ -531,11 +531,11 @@ test.describe('Admin screens', () => {
   })
 
   test('tenant settings renders form', async ({ page }) => {
-    await injectAuth(page, { ...MOCK_MANAGER, position: 'admin' })
     // IMPORTANT — Register the catch-all FIRST so it's checked LAST (LIFO).
     await page.route(`**/api/v1/**`, (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({}) })
     )
+    await signInAs(page, { ...MOCK_MANAGER, position: 'admin' }) // after the catch-all, so /api/v1/me is its
     await page.route(`**/api/v1/admin/stores**`, (route) =>
       route.fulfill({ status: 200, contentType: 'application/json',
         body: JSON.stringify({ data: [] }) })

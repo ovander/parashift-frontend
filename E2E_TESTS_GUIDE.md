@@ -57,7 +57,7 @@ Detailed publish workflow tests covering dialog validation and state transitions
 Shared test utilities and mock data.
 
 **Exports:**
-- `injectAuth()` - Set up authenticated user
+- `signInAs()` - Set up authenticated user
 - `mockApiCalls()` - Mock /api/v1/** endpoints
 - `injectStoreContext()` - Pre-seed Pinia store state
 - `MOCK_MANAGER`, `MOCK_EMPLOYEE` - Test user constants
@@ -109,7 +109,7 @@ npx playwright test && npx playwright show-report
 All tests start with authenticated user:
 ```typescript
 test.beforeEach(async ({ page }) => {
-  await injectAuth(page, MOCK_MANAGER)
+  await signInAs(page, MOCK_MANAGER)
 })
 ```
 
@@ -159,10 +159,10 @@ await injectStoreContext(page, {
 ## Architecture Notes
 
 ### Auth Flow
-1. Test injects `window.__E2E_AUTH__` via `addInitScript()`
-2. Auth store reads tokens from injected object
-3. Router sees authenticated state, allows navigation
-4. No real OAuth flow needed
+1. `signInAs()` mocks `GET /bff/session` (signed in, with a CSRF token) and `GET /api/v1/me`
+2. The router guard asks `/bff/session`, loads the profile and allows navigation
+3. No token is involved; `e2e/auth.spec.ts` runs the BFF sign-in round trip against a fake
+   BFF and a same-origin fake issuer
 
 ### API Mocking
 1. `page.route()` intercepts all `/api/v1/**` calls

@@ -318,7 +318,7 @@ const features = [
   { icon: '✦',  title: 'AI shift suggestions', body: 'Ranked employee recommendations with plain-language reasoning. One click to assign — the rule engine still runs so you can never skip compliance.' },
   { icon: '🗺️', title: 'Coverage heatmap', body: 'Day × hour staffing ratio updated silently after every assignment. Gaps surface in red, overstaffing in amber — coverage is never a surprise.' },
   { icon: '📋', title: 'A/B template editor', body: 'Define repeating shift patterns and publish them up to four weeks ahead. One confirmation dialog before any destructive generation.' },
-  { icon: '🔒', title: 'PKCE OAuth2 security', body: 'Stateless JWT authentication, zero stored credentials, and strict per-store tenant isolation — so each location\'s data is always fully separate.' },
+  { icon: '🔒', title: 'Single sign-on, no token in the browser', body: 'Sign-in through Socrate (OAuth 2.1); the server keeps the tokens, the browser only an HttpOnly session cookie, and strict per-store tenant isolation keeps each location\'s data fully separate.' },
 ]
 
 const steps = [

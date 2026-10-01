@@ -28,17 +28,28 @@ interface MockUser {
   position: 'manager' | 'employee' | 'admin'; store_id?: string
 }
 
-// ── Auth injection ────────────────────────────────────────────────────────────
-// Seeds window.__E2E_AUTH__ before page loads so the auth store picks it up
-// without a real OAuth flow.
-export async function injectAuth(page: Page, user: MockUser) {
-  await page.addInitScript((u) => {
-    (window as any).__E2E_AUTH__ = {
-      user:         u,
-      accessToken:  'e2e-access-token',
-      refreshToken: 'e2e-refresh-token',
-    }
-  }, user)
+// ── Sign-in ───────────────────────────────────────────────────────────────────
+// The backend's BFF owns sign-in: the SPA asks GET /bff/session whether the
+// browser has a session, then loads the profile from GET /api/v1/me. signInAs()
+// answers both as for a signed-in user (with a CSRF token) and ends the session
+// on POST /bff/logout. No token is involved, and nothing in the app is
+// bypassed. e2e/auth.spec.ts runs the sign-in itself: /bff/login → a fake
+// issuer → /bff/callback → back into the app.
+export const CSRF = 'csrf-from-the-bff'
+
+export async function signInAs(page: Page, user: MockUser) {
+  let signedIn = true
+  await page.route('**/bff/session', route => route.fulfill({
+    headers: { 'Cache-Control': 'no-store' },
+    json: signedIn
+      ? { authenticated: true, user: { sub: user.id, email: user.email, name: user.name }, csrf: CSRF }
+      : { authenticated: false },
+  }))
+  await page.route('**/api/v1/me', route => route.fulfill({ json: user }))
+  await page.route('**/bff/logout', (route) => {
+    signedIn = false
+    return route.fulfill({ status: 204 })
+  })
 }
 
 // ── Router navigation without full page reload ────────────────────────────────
@@ -58,6 +69,9 @@ export async function mockApiCalls(
 ) {
   await page.route('**/api/v1/**', async (route) => {
     const url = route.request().url()
+
+    // The profile belongs to signInAs(), whichever was registered last.
+    if (new URL(url).pathname === '/api/v1/me') return route.fallback()
 
     // Check overrides first
     const overrideKey = Object.keys(overrides).find((k) => url.includes(k))
@@ -84,8 +98,10 @@ export async function mockApiCalls(
     if (url.includes('/plans'))       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_PLAN_DRAFT) })
     if (url.includes('/users/me'))    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_MANAGER) })
 
-    // Fall through: let real network call happen (useful for integration tests)
-    return route.continue()
+    // Anything else is a path no test mocks: answer as the API would for an
+    // unknown route. Calls are same-origin, so letting it through would reach
+    // vite preview, which answers index.html with 200.
+    return route.fulfill({ status: 404, json: { error: { code: 'NOT_FOUND', message: `no mock for ${new URL(url).pathname}` } } })
   })
 }
 
@@ -200,11 +216,11 @@ type TestFixtures = {
 
 export const test = base.extend<TestFixtures>({
   managerPage: async ({ page }, use) => {
-    await injectAuth(page, MOCK_MANAGER)
+    await signInAs(page, MOCK_MANAGER)
     await use(page)
   },
   employeePage: async ({ page }, use) => {
-    await injectAuth(page, MOCK_EMPLOYEE)
+    await signInAs(page, MOCK_EMPLOYEE)
     await use(page)
   },
 })

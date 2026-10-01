@@ -11,7 +11,7 @@ Requirements: Node 24 (`.nvmrc`), and a running API for anything past the landin
 ```bash
 git clone https://github.com/ovander/parashift-frontend && cd parashift-frontend
 npm ci
-cp .env.example .env.local   # VITE_API_BASE_URL and the Socrate values, see the README
+cp .env.example .env.local   # optional VITE_* values, see the README
 npm run dev                  # http://localhost:5181
 ```
 
