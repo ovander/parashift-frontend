@@ -1,0 +1,62 @@
+name: Release
+
+# Pushing a vX.Y.Z tag publishes a GitHub Release: notes from the matching
+# CHANGELOG.md section, and the production build (dist/) as a tarball with its
+# checksum. Deploys stay with scripts/push.sh; this only records the release.
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # vite.config.ts stamps the build with `git describe --tags`.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # Fails when CHANGELOG.md has no section for this version.
+      - name: Release notes from CHANGELOG.md
+        run: bash scripts/changelog-section.sh "$TAG" > release-notes.md
+
+      - name: Install (from lockfile)
+        run: npm ci --no-audit --no-fund
+
+      - name: Production build
+        run: |
+          rm -rf dist
+          npm run build
+          echo "$TAG" > dist/VERSION
+          name="parashift-frontend_${TAG}_dist"
+          mkdir -p release
+          tar -C dist -czf "release/$name.tar.gz" .
+          (cd release && sha256sum *.tar.gz > SHA256SUMS)
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release edit "$TAG" --notes-file release-notes.md
+            gh release upload "$TAG" release/* --clobber
+          else
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes-file release-notes.md release/*
+          fi
