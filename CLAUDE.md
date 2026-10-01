@@ -71,7 +71,10 @@ chain a push after a command that may fail.
 ## Releases and deploys (the owner runs them)
 
 - A release is an annotated tag `vX.Y.Z` on an updated `main`, with the `[Unreleased]` section
-  moved under the new version. Tag only the merged release commit.
-- `scripts/push.sh` builds and rsyncs `dist/` to the apps VPS. Delete stale local env files
+  moved under the new version. Tag only the merged release commit:
+  `grep -q "^## \[X.Y.Z\]" CHANGELOG.md && git tag -a vX.Y.Z -m vX.Y.Z`. Pushing the tag runs
+  `.github/workflows/release.yml`, which fails when the changelog section is missing.
+- `scripts/push.sh` builds and rsyncs `dist/` to the apps VPS; the SSH settings live in
+  `~/.config/parashift/deploy.env`, never in the repository. Delete stale local env files
   (`.env.production`, `.env.*.local`): Vite loads them even though git ignores them. Deploy after
   the backend when the API changed.

@@ -33,3 +33,6 @@ lerna-debug.log*
 
 test-results/
 playwright-report/
+
+# 🧪 Test coverage reports
+coverage/
